@@ -11,6 +11,7 @@ class ChatController extends Controller
 {
     public function index()
     {
+        
         $data = ChatBotQueries::all();
         return response()->json($data);
     }
