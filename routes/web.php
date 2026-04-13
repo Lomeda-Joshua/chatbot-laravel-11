@@ -4,8 +4,11 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ChatbotConstructorController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\ChatController;
+use Illuminate\Http\Request;
 
-Route::get('/', [AuthenticatedSessionController::class, 'create'])
+
+Route::get('/login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 
 Route::get('/dashboard', function () {
@@ -20,5 +23,11 @@ Route::middleware('auth')->group(function () {
 
 // Chatbot constructor
 Route::get('/chatbot-constuctor',[ChatbotConstructorController::class, 'index'])->middleware('auth')->name('chatbot-constructor');
+
+
+
+
+
+
 
 require __DIR__.'/auth.php';
