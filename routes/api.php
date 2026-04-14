@@ -10,7 +10,8 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::get('/', [ChatController::class, 'index'])->middleware('auth:sanctum');
+
+Route::get('/', [ChatController::class, 'data'])->middleware('auth:sanctum');
 
 
 Route::post('/token', function (Request $request) {
