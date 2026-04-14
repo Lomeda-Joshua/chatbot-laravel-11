@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ChatbotConstructorController extends Controller
 {
@@ -11,6 +12,8 @@ class ChatbotConstructorController extends Controller
      */
     public function index()
     {
+        // $db_connectionC_count = DB::connection('mysql2')->table('some_table')->get();
+        // dd($db_connectionC_count);
         return view('pages.chatbot_constructor');
     }
 

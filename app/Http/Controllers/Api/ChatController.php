@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 
 use App\Models\ChatBotQueries;
-
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class ChatController extends Controller
@@ -15,86 +15,44 @@ class ChatController extends Controller
         return response()->json($data);
     }
 
-    public function data(Request $request)
+    public function data()
     {
-        $data = collect([
-            (object)[
-                'id'      => 1,
-                'query'   => 'How may I help you today?',
-                'actions' => collect([                        
-                    (object)[
-                        'label'         => 'I would like to access the status of my complaint',
-                        'is_form'       => true,
-                        'is_submit'     => true,
-                        'next_sequence' => 0,
-                        'form'          => (object)[
-                            'description' => 'Please input your email address and tracking number',
-                            'fields'      => collect([        
-                                (object)[
-                                    'type'     => 'email',
-                                    'name'     => 'email',
-                                    'label'    => 'Email Address',
-                                    'value'    => '',
-                                    'required' => true,
-                                    'disabled' => false,
-                                    'options'  => collect([]) 
-                                ],
-                                (object)[
-                                    'type'     => 'text',
-                                    'name'     => 'tracking_number',
-                                    'label'    => 'Tracking Number',
-                                    'value'    => '',
-                                    'required' => true,
-                                    'disabled' => false,
-                                    'options'  => collect([]) 
-                                ],
-                            ]),
-                        ],
-                    ],
-                    (object)[
-                        'label'         => 'Speak to a live agent',
-                        'is_form'       => false,
-                        'is_submit'     => false,
-                        'next_sequence' => 2,
-                        'form'          => null,
-                    ],
-                ]),
-            ],
-        ]);
+        $data = ChatBotQueries::all();
 
         $formatted = $data->map(function ($query) {
             return [
-                'id'      => $query->id,
-                'query'   => $query->query,
-                'actions' => $query->actions->map(function ($action) {
+                'id'       => $query->id,
+                'sequence' => $query->sequence,
+                'query'    => $query->query_name,
+                'isForm'   => (bool) $query->is_form,
+                'isSubmit' => (bool) $query->is_submit,
+                'isActive' => (bool) $query->is_active,
+                'isTicket' => (bool) $query->is_ticket,
+                'imageUrl' => $query->image_url,
+                'actions'  => collect($query->choices)->map(function ($choice) {
                     return [
-                        'label'        => $action->label,
-                        'isForm'       => $action->is_form,
-                        'isSubmit'     => $action->is_submit,
-                        'nextSequence' => $action->next_sequence,
-                        'form'         => $action->form ? [
-                            'description' => $action->form->description,
-                            'fields'      => $action->form->fields->map(function ($field) {
-                                return [
-                                    'type'     => $field->type,
-                                    'name'     => $field->name,
-                                    'label'    => $field->label,
-                                    'value'    => $field->value ?? '',
-                                    'required' => $field->required,
-                                    'disabled' => $field->disabled,
-                                    'option'   => $field->options
-                                                    ->pluck('option_value')
-                                                    ->toArray(),
-                                ];
-                            })->toArray(),
-                        ] : null,
+                        'label'      => $choice['label']      ?? '',
+                        'navigation' => $choice['navigation'] ?? null,
                     ];
                 })->toArray(),
+                'form' => $query->is_form ? [
+                    'description' => $query->form_description,
+                    'fields'      => collect($query->form_details)->map(function ($field) {
+                        return [
+                            'type'     => $field['type']     ?? '',
+                            'name'     => $field['name']     ?? '',
+                            'label'    => $field['label']    ?? '',
+                            'value'    => $field['value']    ?? '',
+                            'required' => (bool) ($field['required'] ?? false),
+                            'disabled' => (bool) ($field['disabled'] ?? false),
+                            'option'   => $field['option']   ?? [],
+                        ];
+                    })->toArray(),
+                ] : null,
             ];
         });
-
-
 
         return response()->json($formatted);
     }
 }
+

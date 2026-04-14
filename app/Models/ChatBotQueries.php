@@ -10,6 +10,7 @@ class ChatBotQueries extends Model
     //  use SoftDeletes;
 
     protected $fillable = [
+        'id',
         'group_id',
         'sequence',
         'query_name',
