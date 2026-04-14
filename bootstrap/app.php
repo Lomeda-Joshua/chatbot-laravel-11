@@ -12,7 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
-        apiPrefix: '', 
+        apiPrefix: 'api', 
 
 
     )
@@ -20,14 +20,14 @@ return Application::configure(basePath: dirname(__DIR__))
                 $middleware->statefulApi();
     })
     ->withExceptions(function (Exceptions $exceptions) {
-         $exceptions->renderable(function (AuthenticationException $e, Request $request) {
-            if ($request->is('/')) {
-                return response()->json([
-                    'timestamp' => now()->toDateTimeString(),
-                    'status' => 401,
-                    'error' => 'Unauthorized',
-                    'path' => $request->path()
-                ], 401);
-            }
-        });
+        //  $exceptions->renderable(function (AuthenticationException $e, Request $request) {
+        //     if ($request->is('/')) {
+        //         return response()->json([
+        //             'timestamp' => now()->toDateTimeString(),
+        //             'status' => 401,
+        //             'error' => 'Unauthorized',
+        //             'path' => $request->path()
+        //         ], 401);
+        //     }
+        // });
     })->create();

@@ -10,9 +10,14 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
+Route::get('/test-me', function () {
+    return response()->json(['message' => 'API is reachable']);
+});
 
-Route::get('/', [ChatController::class, 'data']);
-
+Route::prefix('chat')->group(function () {
+    Route::get('/get-step', [ChatController::class, 'data']);
+    Route::post('/get-step', [ChatController::class, 'nextStep']);
+});
 
 // Route::post('/token', function (Request $request) {
 //     $request->validate([
@@ -36,4 +41,3 @@ Route::get('/', [ChatController::class, 'data']);
 
 
 
-Route::get('/get-data/{id}', [ChatController::class, 'data']);
