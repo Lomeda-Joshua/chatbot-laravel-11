@@ -20,14 +20,15 @@ return Application::configure(basePath: dirname(__DIR__))
                 $middleware->statefulApi();
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //  $exceptions->renderable(function (AuthenticationException $e, Request $request) {
-        //     if ($request->is('/')) {
-        //         return response()->json([
-        //             'timestamp' => now()->toDateTimeString(),
-        //             'status' => 401,
-        //             'error' => 'Unauthorized',
-        //             'path' => $request->path()
-        //         ], 401);
-        //     }
-        // });
+        $exceptions->renderable(function (AuthenticationException $e, Request $request) {
+            // Ensure the request expects a JSON response, common in Sanctum/Axios setups
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'timestamp' => now()->format('Y-m-d H:i:s O'), 
+                    'status'    => 401,
+                    'error'     => 'Unauthorized',
+                    'path'      => '/' . ltrim($request->path(), '/') 
+                ], 401);
+            }
+        });
     })->create();

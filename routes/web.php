@@ -25,6 +25,14 @@ Route::middleware('auth')->group(function () {
 Route::get('/chatbot-constuctor',[ChatbotConstructorController::class, 'index'])->middleware('auth')->name('chatbot-constructor');
 
 
+Route::get('/', function () {
+    return response()->json([
+        'timestamp' => now()->format('Y-m-d H:i:s O'),
+        'status'    => 401,
+        'error'     => 'Unauthorized',
+        'path'      => '/'
+    ], 401);
+});
 
 
 
