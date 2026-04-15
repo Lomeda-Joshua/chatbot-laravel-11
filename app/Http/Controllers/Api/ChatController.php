@@ -68,35 +68,58 @@ class ChatController extends Controller
             $exploded[$column] = explode(';;', $query->$column ?? '');
         }
 
+
+
         // Step 3 — get the count from the first column (choices)
         $count = count($exploded['choices']);
 
         // Step 4 — loop by index and build each action
         $actions = [];
-        for ($i = 0; $i < $count; $i++) {
-            $actions[] = [
-                'label'           => trim($exploded['choices'][$i]          ?? ''),
-                'isForm'          => (bool) trim($exploded['is_form'][$i]   ?? 0),
-                'isSubmit'        => (bool) trim($exploded['is_submit'][$i] ?? 0),
-                'isTicket'        => (bool) trim($exploded['is_ticket'][$i] ?? 0),
-                'nextSequence'    => (int)  trim($exploded['navigation'][$i]?? 0),
-                'form'            => (bool) trim($exploded['is_form'][$i]   ?? 0) ? [
-                    'description' => trim($exploded['form_description'][$i] ?? ''),
-                    'fields'      => collect($query->form_details)->map(function ($field) {
-                        return [
-                            'type'     => $field['type']     ?? '',
-                            'name'     => $field['name']     ?? '',
-                            'label'    => $field['label']    ?? '',
-                            'date'     => $field['date']    ?? '',
-                            'value'    => $field['value']    ?? '',
-                            'required' => (bool) ($field['required'] ?? false),
-                            'disabled' => (bool) ($field['disabled'] ?? false),
-                            'option'   => $field['option']   ?? [],
-                        ];
-                    })->toArray(),
-                ] : null,
-            ];
-        }
+       for ($i = 0; $i < $count; $i++) {
+    // Determine if this specific action requires a form
+    $hasForm = (bool) trim($exploded['is_form'][$i] ?? 0);
+
+    $actions[] = [
+        'label'        => trim($exploded['choices'][$i] ?? ''),
+        'isForm'       => $hasForm,
+        'isSubmit'     => (bool) trim($exploded['is_submit'][$i] ?? 0),
+        'isTicket'     => (bool) trim($exploded['is_ticket'][$i] ?? 0),
+        'nextSequence' => (int) trim($exploded['navigation'][$i] ?? 0),
+        'form'         => $hasForm ? [
+            'description' => trim($exploded['form_description'][$i] ?? ''),
+            
+            // Access the i-th group of fields and parse them
+            'fields'      => collect(explode(',', ($exploded['form_details'][$i] ?? '')))
+                ->map(function ($rawField) {
+                    $rawField = trim($rawField);
+                    
+                    // Skip if the field definition is literally 'null' or empty
+                    if ($rawField === 'null' || empty($rawField)) return null;
+
+                    // Parse "input[type="email"]:email"
+                    $parts     = explode(':', $rawField);
+                    $rawType   = $parts[0] ?? '';
+                    $fieldName = trim($parts[1] ?? '');
+
+                    // Extract "email" from "input[type="email"]"
+                    $cleanType = str_replace(['input[type="', '"]', 'input['], '', $rawType);
+
+                    return [
+                        'type'     => $cleanType,
+                        'name'     => $fieldName,
+                        'label'    => ucwords(str_replace('_', ' ', $fieldName)), // More descriptive label
+                        'value'    => '',
+                        'required' => true,
+                        'disabled' => false,
+                        'option'   => [],
+                    ];
+                })
+                ->filter() // Remove the 'null' entries
+                ->values() // Reset keys to [0, 1, 2...] for JSON compatibility
+                ->toArray(),
+        ] : null,
+    ];
+}
 
             
         return [
