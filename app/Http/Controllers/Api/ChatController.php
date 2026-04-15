@@ -19,11 +19,11 @@ class ChatController extends Controller
     public function data(Request $request)
     { 
         $group_id = $request->query('group_id');
+        $sequence_id = $request->query('sequence_id');
         
-        // Initial load request to API, send only sequence 1
+        // Initial load request to API, send sequence 1 first 
         $data = ChatBotQueries::where('group_id', $group_id)
-                ->where('sequence', 1)       
-                ->where('is_active', 1)
+                ->where('sequence', $sequence_id)       
                 ->first();
 
         return response()->json($this->formatQuery($data));
@@ -86,8 +86,9 @@ class ChatController extends Controller
         'isTicket'     => (bool) trim($exploded['is_ticket'][$i] ?? 0),
         'nextSequence' => (int) trim($exploded['navigation'][$i] ?? 0),
         'form'         => $hasForm ? [
+
             'description' => trim($exploded['form_description'][$i] ?? ''),
-            
+
             // Access the i-th group of fields and parse them
             'fields'      => collect(explode(',', ($exploded['form_details'][$i] ?? '')))
                 ->map(function ($rawField) {
@@ -107,7 +108,7 @@ class ChatController extends Controller
                     return [
                         'type'     => $cleanType,
                         'name'     => $fieldName,
-                        'label'    => ucwords(str_replace('_', ' ', $fieldName)), // More descriptive label
+                        'label'    => ucwords($fieldName),
                         'value'    => '',
                         'required' => true,
                         'disabled' => false,
