@@ -20,11 +20,17 @@ class ChatController extends Controller
     { 
         $group_id = $request->query('group_id');
         $sequence_id = $request->query('sequence_id');
-        
-        // Initial load request to API, send sequence 1 first 
-        $data = ChatBotQueries::where('group_id', $group_id)
+
+        if(isset($sequence_id)){
+            // Initial load request to API, send sequence 1 first 
+            $data = ChatBotQueries::where('group_id', $group_id)
                 ->where('sequence', $sequence_id)       
                 ->first();
+        }else{
+            $data = ChatBotQueries::where('group_id', $group_id)
+                ->where('sequence', 1)       
+                ->first();
+        }
 
         return response()->json($this->formatQuery($data));
     }
