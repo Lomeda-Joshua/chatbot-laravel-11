@@ -10,10 +10,6 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::get('/test-me', function () {
-    return response()->json(['message' => 'API is reachable']);
-});
-
 Route::prefix('chat')->group(function () {
     Route::get('/get-step', [ChatController::class, 'data']);
     Route::post('/get-step', [ChatController::class, 'nextStep']);

@@ -7,12 +7,17 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ChatController;
 use Illuminate\Http\Request;
 
+use App\Models\User;
+
 
 Route::get('/login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 
 Route::get('/dashboard', function () {
-    return view('dashboard');
+
+    $logged_user = Auth::user();    
+
+    return view('dashboard', compact($logged_user));
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
