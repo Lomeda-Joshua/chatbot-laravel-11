@@ -45,7 +45,7 @@ class ChatController extends Controller
         $group_id = $request->query('group_id');
         $sequence_id = $request->query('sequence_id');
 
-        $db_connection_location = DB::connection('mysql2')->select('select reg_region, reg_description from loc_regions where 1=1');
+        // $db_connection_location = DB::connection('mysql2')->select('select reg_region, reg_description from loc_regions where 1=1');
 
         if(isset($sequence_id)){
             // Load request to API, if sequence is set
