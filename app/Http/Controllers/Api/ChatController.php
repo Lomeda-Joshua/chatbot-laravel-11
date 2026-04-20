@@ -172,6 +172,7 @@ class ChatController extends Controller
 
         // Step 4 — loop by index and build each action
         $actions = [];
+
        for ($i = 0; $i < $count; $i++) {
     // Determine if this specific action requires a form
     $hasForm = (bool) trim($exploded['is_form'][$i] ?? 0);
@@ -179,8 +180,12 @@ class ChatController extends Controller
     $actions[] = [
         'label'        => trim($exploded['choices'][$i] ?? ''),
         'isForm'       => $hasForm,
-        'isSubmit'     => (bool) trim($exploded['is_submit'][$i] ?? 0),
-        'isTicket'     => (bool) trim($exploded['is_ticket'][$i] ?? 0),
+        'isSubmit' => collect(explode(';;', $query->is_submit ?? ''))
+                ->map(fn($val) => (int) trim($val))
+                ->toArray(),
+        'isTicket' => collect(explode(';;', $query->is_ticket ?? ''))
+                ->map(fn($val) => (int) trim($val))
+                ->toArray(),
         'nextSequence' => (int) trim($exploded['navigation'][$i] ?? 0),
         'form'         => $hasForm ? [
 
