@@ -15,9 +15,10 @@ Route::get('/login', [AuthenticatedSessionController::class, 'create'])
 
 Route::get('/dashboard', function () {
 
-    $logged_user = Auth::user();    
+    // $logged_user = Auth::user();    
+    // return view('dashboard', compact($logged_user));
+    return view('dashboard');
 
-    return view('dashboard', compact($logged_user));
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {

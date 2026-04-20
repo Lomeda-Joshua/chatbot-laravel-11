@@ -49,7 +49,7 @@ class ChatController extends Controller
 
         if(isset($sequence_id)){
             // Load request to API, if sequence is set
-            $data = ChatBotQueries::select('id','group_id', 'complaint', 'sequence', 'query_name', 'choices', 'form_description', 'navigation', 'updated_by'    )->where('group_id', $group_id)
+            $data = ChatBotQueries::select('id','group_id', 'complaint', 'is_form', 'sequence', 'query_name', 'choices', 'form_description', 'navigation', 'updated_by'    )->where('group_id', $group_id)
                 ->where('sequence', $sequence_id)       
                 ->first();
         }else{
@@ -76,7 +76,7 @@ class ChatController extends Controller
             'tracking_no'                  => 'required|string|unique:disputes,tracking_no',
             
             // Logic Flags
-            'is_form'                      => 'required|boolean',
+            'is_form'                      => 'required|integer',
             'choices'                      => 'nullable|array',
             
             // Consumer Details
@@ -120,7 +120,7 @@ class ChatController extends Controller
         // 2. Hydrate (Mapping)
         $this->user_id           = $request->input('user_id');
         $this->query_name_fill   = $request->input('query_name');
-        $this->is_form_status    = (bool) $request->input('is_form'); // Explicit cast per your md rules
+        $this->is_form_status    = $request->input('is_form'); // Explicit cast per your md rules
         $this->tracking_no       = $request->input('tracking_no');
         
         // Consumer mapping 
@@ -175,17 +175,17 @@ class ChatController extends Controller
 
        for ($i = 0; $i < $count; $i++) {
     // Determine if this specific action requires a form
-    $hasForm = (bool) trim($exploded['is_form'][$i] ?? 0);
+    $hasForm = (int) trim($query->is_form ?? 0); 
 
     $actions[] = [
         'label'        => trim($exploded['choices'][$i] ?? ''),
-        'isForm'       => $hasForm,
+        // 'isForm'       => $hasForm,
         'isSubmit' => collect(explode(';;', $query->is_submit ?? ''))
-                ->map(fn($val) => (int) trim($val))
-                ->toArray(),
+                        ->map(fn($val) => (int) trim($val))
+                        ->toArray(),
         'isTicket' => collect(explode(';;', $query->is_ticket ?? ''))
-                ->map(fn($val) => (int) trim($val))
-                ->toArray(),
+                        ->map(fn($val) => (int) trim($val))
+                        ->toArray(),
         'nextSequence' => (int) trim($exploded['navigation'][$i] ?? 0),
         'form'         => $hasForm ? [
 
@@ -228,6 +228,7 @@ class ChatController extends Controller
         return [
             'id'      => $query->id,
             'query'   => $query->query_name,
+            'isForm'  => $query->is_form,
             'actions' => $actions,
         ];
     }
