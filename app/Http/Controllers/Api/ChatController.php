@@ -33,13 +33,6 @@ class ChatController extends Controller
     protected $relevant_docs_URL;
 
 
-    public function index()
-    {
-        $data = ChatBotQueries::all();
-        return response()->json($data);
-    }
-
-
     public function data(Request $request)
     { 
         $group_id = $request->query('group_id');
@@ -49,7 +42,7 @@ class ChatController extends Controller
 
         if(isset($sequence_id)){
             // Load request to API, if sequence is set
-            $data = ChatBotQueries::select('id','group_id', 'complaint', 'is_form', 'sequence', 'query_name', 'choices', 'form_description', 'navigation', 'updated_by'    )->where('group_id', $group_id)
+            $data = ChatBotQueries::select('id','group_id', 'complaint', 'sequence', 'query_name', 'choices', 'form_description', 'form_details', 'is_form', 'is_submit', 'is_ticket', 'navigation', 'updated_by')->where('group_id', $group_id)
                 ->where('sequence', $sequence_id)       
                 ->first();
         }else{
@@ -76,13 +69,13 @@ class ChatController extends Controller
             'tracking_no'                  => 'required|string|unique:disputes,tracking_no',
             
             // Logic Flags
-            'is_form'                      => 'required|integer',
+            'is_form'                      => 'required|array|string',
             'choices'                      => 'nullable|array',
             
             // Consumer Details
-            'email_address'                => 'required_if:is_form,true|email',
-            'address'                      => 'required_if:is_form,true|string',
-            'contact_no'                   => 'required_if:is_form,true|string|max:20',
+            'email_address'                => 'email',
+            'address'                      => 'string',
+            'contact_no'                   => 'string|max:20',
             
             // Business Details
             'business_name'                => 'nullable|string|max:255',
@@ -100,10 +93,9 @@ class ChatController extends Controller
         ]);
 
 
-        $data = ChatBotQueries::where('group_id', $group_id)
-                            ->where('sequence', $target_sequence) 
-                            ->where('is_active', true)
-                            ->first();
+        $data = ChatBotQueries::select('id','group_id', 'complaint', 'sequence', 'query_name', 'choices', 'form_description', 'form_details', 'is_submit', 'is_ticket', 'navigation', 'updated_by')->where('group_id', $group_id)
+                ->where('sequence', $target_sequence)       
+                ->first();
 
         if (!$data) {
             return response()->json(['error' => 'Step not found'], 404);
@@ -148,18 +140,16 @@ class ChatController extends Controller
 
     private function formatQuery($query)
     {
-        $is_form_values = explode(';;', $query->is_form);
-
-        // Step 1 : insert all of the related columnds to be exploded.
+        // Step 1 : insert all of the related columns to be exploded.
         $columns = [
                 'choices'          => 'label',
-                'is_form'          => 'isForm',
-                'form_description' => 'formDescription',
-                'form_details'     => 'formDescription',
-                'is_submit'        => 'isSubmit',
                 'navigation'       => 'nextSequence',
+                'form_description' => 'formDescription',
+                'form_details'     => 'formDetails',
+                'is_form'          => 'isForm',
+                'is_submit'        => 'isSubmit',
                 'is_ticket'        => 'isTicket',
-        ];
+        ];        
 
         // Step 2 : Apply exploded function to array.
         $exploded = [];
@@ -173,62 +163,64 @@ class ChatController extends Controller
         // Step 4 — loop by index and build each action
         $actions = [];
 
+        $is_form_values = explode(';;', $query->is_form ?? '');
+
        for ($i = 0; $i < $count; $i++) {
-    // Determine if this specific action requires a form
-    $hasForm = (int) trim($query->is_form ?? 0); 
+            
+            $hasForm        = (int) $is_form_values[$i];
 
-    $actions[] = [
-        'label'        => trim($exploded['choices'][$i] ?? ''),
-        // 'isForm'       => $hasForm,
-        'isSubmit' => collect(explode(';;', $query->is_submit ?? ''))
-                        ->map(fn($val) => (int) trim($val))
-                        ->toArray(),
-        'isTicket' => collect(explode(';;', $query->is_ticket ?? ''))
-                        ->map(fn($val) => (int) trim($val))
-                        ->toArray(),
-        'nextSequence' => (int) trim($exploded['navigation'][$i] ?? 0),
-        'form'         => $hasForm ? [
+            $actions[] = [
+                'label'        => trim($exploded['choices'][$i] ?? ''),
+                'isForm'       => collect(explode(';;', $query->is_form ?? ''))
+                                    ->map(fn($val) => (int) trim($val))
+                                    ->toArray(),
+                'isSubmit'     => collect(explode(';;', $query->is_submit ?? ''))
+                                    ->map(fn($val) => (int) trim($val))
+                                    ->toArray(),
+                'isTicket'     => collect(explode(';;', $query->is_ticket ?? ''))
+                                    ->map(fn($val) => (int) trim($val))
+                                    ->toArray(),
+                'nextSequence' => (int) trim($exploded['navigation'][$i] ?? 0),
+                'form'         => $hasForm ? [
+                                    'description' => trim($exploded['form_description'][$i] ?? ''),
 
-            'description' => trim($exploded['form_description'][$i] ?? ''),
+                                    // Access the i-th group of fields and parse them
+                                    'fields'      => collect(explode(',', ($exploded['form_details'][$i] ?? '')))
+                                        ->map(function ($rawField) {
+                                            $rawField = trim($rawField);
+                                            
+                                            // Skip if the field definition is literally 'null' or empty
+                                            if ($rawField === 'null' || empty($rawField)) return null;
 
-            // Access the i-th group of fields and parse them
-            'fields'      => collect(explode(',', ($exploded['form_details'][$i] ?? '')))
-                ->map(function ($rawField) {
-                    $rawField = trim($rawField);
-                    
-                    // Skip if the field definition is literally 'null' or empty
-                    if ($rawField === 'null' || empty($rawField)) return null;
+                                            // Parse "input[type="email"]:email"
+                                            $parts     = explode(':', $rawField);
+                                            $rawType   = $parts[0] ?? '';
+                                            $fieldName = trim($parts[1] ?? '');
 
-                    // Parse "input[type="email"]:email"
-                    $parts     = explode(':', $rawField);
-                    $rawType   = $parts[0] ?? '';
-                    $fieldName = trim($parts[1] ?? '');
+                                            // Extract "email" from "input[type="email"]"
+                                            $cleanType = str_replace(['input[type="', '"]', 'input['], '', $rawType);
 
-                    // Extract "email" from "input[type="email"]"
-                    $cleanType = str_replace(['input[type="', '"]', 'input['], '', $rawType);
+                                            return [
+                                                'type'     => $cleanType,
+                                                'name'     => $fieldName,
+                                                'label'    => ucwords($fieldName),
+                                                'value'    => '',
+                                                'required' => true,
+                                                'disabled' => false,
+                                                'option'   => [],
+                                            ];
+                                        })
+                                        ->filter() // Remove the 'null' entries
+                                        ->values() // Reset keys to [0, 1, 2...] for JSON compatibility
+                                        ->toArray(),
+                    ] : null,
+            ];
 
-                    return [
-                        'type'     => $cleanType,
-                        'name'     => $fieldName,
-                        'label'    => ucwords($fieldName),
-                        'value'    => '',
-                        'required' => true,
-                        'disabled' => false,
-                        'option'   => [],
-                    ];
-                })
-                ->filter() // Remove the 'null' entries
-                ->values() // Reset keys to [0, 1, 2...] for JSON compatibility
-                ->toArray(),
-        ] : null,
-    ];
-}
-
+        }
             
         return [
             'id'      => $query->id,
             'query'   => $query->query_name,
-            'isForm'  => $query->is_form,
             'actions' => $actions,
         ];
     }
