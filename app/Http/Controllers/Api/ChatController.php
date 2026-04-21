@@ -167,11 +167,9 @@ class ChatController extends Controller
         // $region_id = $request->input('region_id');
         // $province_id = $request->input('province_id');
 
-        $regions = DB::table('loc_regions')
-            ->all();
+        $regions = DB::table('loc_regions')->get();
 
-        $provinces = DB::table('loc_provinces')
-            ->all();
+        $provinces = DB::table('loc_provinces')->get();
 
         return response()->json([
         'status' => 'success',
