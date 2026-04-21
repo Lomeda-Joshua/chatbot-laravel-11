@@ -164,16 +164,22 @@ class ChatController extends Controller
 
     public function getRegionProvinces(Request $request){        
 
-        $region_id = $request->input('region_id');
-        $province_id = $request->input('province_id');
+        // $region_id = $request->input('region_id');
+        // $province_id = $request->input('province_id');
 
-        $table_municipalities = DB::table('loc_municipalities')
-                ->select('id', 'mun_desc', 'mun_complete_desc')
-                ->where('reg_id', $region_id)
-                ->where('prov_id', $province_id)
-                ->get();
+        $regions = DB::table('loc_regions')
+            ->all();
 
-        return response()->json($table_municipalities);
+        $provinces = DB::table('loc_provinces')
+            ->all();
+
+        return response()->json([
+        'status' => 'success',
+        'data' => [
+            'regions' => $regions,
+            'provinces' => $provinces
+        ]
+    ]);
     }
 
 
