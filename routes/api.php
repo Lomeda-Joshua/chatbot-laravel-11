@@ -16,6 +16,8 @@ Route::prefix('chat')->group(function () {
     Route::post('/save-logs',   [ChatController::class, 'getData']);
 
     Route::get('/regions-provinces', [ ChatController::class, 'getRegionProvinces'] );
+    Route::get('/municipalities-barangays', [ ChatController::class, 'getMunicipalitieAndBarangays'] );
+
 });
 
 

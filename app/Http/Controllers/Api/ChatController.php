@@ -162,44 +162,50 @@ class ChatController extends Controller
 
 
 
-    public function getRegionProvinces(Request $request){        
+    public function getRegionProvinces(){ 
 
-        // $region_id = $request->input('region_id');
-        // $province_id = $request->input('province_id');
-
-        $regions = DB::table('loc_regions')->get();
-
-        $provinces = DB::table('loc_provinces')->get();
+        $regions = DB::table('loc_regions')->select('reg_region','reg_description')->get();
+        $provinces = DB::table('loc_provinces')->select('prov_desc')->get();
 
         return response()->json([
-        'status' => 'success',
-        'data' => [
-            'regions' => $regions,
-            'provinces' => $provinces
-        ]
-    ]);
+            'status' => 'success',
+            'data' => [
+                'regions' => $regions,
+                'provinces' => $provinces
+            ]
+        ]);
     }
 
 
-    public function getMunicipalities(Request $request){        
-        $table_municipalities = DB::table('loc_municipalities')
-        ->select('id', 'mun_desc', 'mun_complete_desc')
-        ->where('reg_id', $request->region_id)
-        ->where('prov_id', $request->province_id)
+    public function getMunicipalitieAndBarangays(Request $request){   
+
+        $mun_id = $request->input('mun_id');
+
+        $table_barangays_municipalities = DB::table('loc_barangays')
+            ->select('id', 'mun_id', 'mun_desc', 'brgy_name', 'brgy_description')
+            ->where('mun_id', $mun_id)
         ->get();
         
-        return $table_municipalities;
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'municipal_barangays' => $table_barangays_municipalities,
+            ]
+        ]);
     }
 
-    // public function getMunicipalities(Request $request){        
-    //     $table_region = DB::select('select id, reg_region, reg_description from loc_regions where reg_id=' . $request->region_data . ' where mun_id');
-    //     return $table_region;
-    // }
 
-    // public function getBaranggays(Request $request){        
-    //     $table_region = DB::select('select id, reg_region, reg_description from loc_regions where 1=1');
-    //     return $table_region;
-    // }
+    public function getBaranggays(Request $request){   
+    
+        $mun_id = $request->input('mun_id');
+    
+         $table_baranggays = DB::table('loc_barangays')
+            ->select('id', 'brgy_description', 'mun_complete_desc')
+            ->where('reg_id', $mun_id)
+        ->get();
+
+        return $mun_id;
+    }
     
 }
 
