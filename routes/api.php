@@ -15,8 +15,8 @@ Route::prefix('chat')->group(function () {
     Route::post('/get-step',    [ChatController::class, 'nextStep']);
     Route::post('/save-logs',   [ChatController::class, 'getData']);
 
-    Route::get('/regions', [ ChatController::class, 'getRegionProvinces'] );
-    Route::get('/provinces', [ ChatController::class, 'getRegionProvinces'] );
+    Route::get('/regions', [ ChatController::class, 'getRegion'] );
+    Route::get('/provinces', [ ChatController::class, 'getProvinces'] );
     Route::get('/municipalities', [ ChatController::class, 'getMunicipalities'] );
     Route::get('/barangays', [ ChatController::class, 'getBarangays'] );
 
