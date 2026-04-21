@@ -1,11 +1,16 @@
 <?php
 
 namespace App\Http\Controllers\Api;
-use App\Http\Controllers\Controller;
 
-use App\Models\ChatBotQueries;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+
+// Models
+use App\Models\ChatBotQueries;
+use App\Models\ChatBotLog;
+
+
 
 class ChatController extends Controller
 {
@@ -81,54 +86,53 @@ class ChatController extends Controller
 
         // Step 4 — loop by index and build each action
         $actions = [];
-       for ($i = 0; $i < $count; $i++) {
-    // Determine if this specific action requires a form
-    $hasForm = (bool) trim($exploded['is_form'][$i] ?? 0);
+        for ($i = 0; $i < $count; $i++) {
+                // Determine if this specific action requires a form
+                $hasForm = (bool) trim($exploded['is_form'][$i] ?? 0);
 
-    $actions[] = [
-        'label'        => trim($exploded['choices'][$i] ?? ''),
-        'isForm'       => $hasForm,
-        'isSubmit'     => (bool) trim($exploded['is_submit'][$i] ?? 0),
-        'isTicket'     => (bool) trim($exploded['is_ticket'][$i] ?? 0),
-        'nextSequence' => (int) trim($exploded['navigation'][$i] ?? 0),
-        'form'         => $hasForm ? [
+                $actions[] = [
+                        'label'        => trim($exploded['choices'][$i] ?? ''),
+                        'isForm'       => $hasForm,
+                        'isSubmit'     => (bool) trim($exploded['is_submit'][$i] ?? 0),
+                        'isTicket'     => (bool) trim($exploded['is_ticket'][$i] ?? 0),
+                        'nextSequence' => (int) trim($exploded['navigation'][$i] ?? 0),
+                        'form'         => $hasForm ? [
 
-            'description' => trim($exploded['form_description'][$i] ?? ''),
+                            'description' => trim($exploded['form_description'][$i] ?? ''),
 
-            // Access the i-th group of fields and parse them
-            'fields'      => collect(explode(',', ($exploded['form_details'][$i] ?? '')))
-                ->map(function ($rawField) {
-                    $rawField = trim($rawField);
-                    
-                    // Skip if the field definition is literally 'null' or empty
-                    if ($rawField === 'null' || empty($rawField)) return null;
+                            // Access the i-th group of fields and parse them
+                            'fields'      => collect(explode(',', ($exploded['form_details'][$i] ?? '')))
+                                ->map(function ($rawField) {
+                                    $rawField = trim($rawField);
+                                    
+                                    // Skip if the field definition is literally 'null' or empty
+                                    if ($rawField === 'null' || empty($rawField)) return null;
 
-                    // Parse "input[type="email"]:email"
-                    $parts     = explode(':', $rawField);
-                    $rawType   = $parts[0] ?? '';
-                    $fieldName = trim($parts[1] ?? '');
+                                    // Parse "input[type="email"]:email"
+                                    $parts     = explode(':', $rawField);
+                                    $rawType   = $parts[0] ?? '';
+                                    $fieldName = trim($parts[1] ?? '');
 
-                    // Extract "email" from "input[type="email"]"
-                    $cleanType = str_replace(['input[type="', '"]', 'input['], '', $rawType);
+                                    // Extract "email" from "input[type="email"]"
+                                    $cleanType = str_replace(['input[type="', '"]', 'input['], '', $rawType);
 
-                    return [
-                        'type'     => $cleanType,
-                        'name'     => $fieldName,
-                        'label'    => ucwords($fieldName),
-                        'value'    => '',
-                        'required' => true,
-                        'disabled' => false,
-                        'option'   => [],
-                    ];
-                })
-                ->filter() // Remove the 'null' entries
-                ->values() // Reset keys to [0, 1, 2...] for JSON compatibility
-                ->toArray(),
-        ] : null,
-    ];
-}
+                                    return [
+                                        'type'     => $cleanType,
+                                        'name'     => $fieldName,
+                                        'label'    => ucwords($fieldName),
+                                        'value'    => '',
+                                        'required' => true,
+                                        'disabled' => false,
+                                        'option'   => [],
+                                    ];
+                                })
+                                    ->filter() // Remove the 'null' entries
+                                    ->values() // Reset keys to [0, 1, 2...] for JSON compatibility
+                                    ->toArray(),
+                            ] : null,
+                        ];
+        }
 
-            
         return [
             'id'      => $query->id,
             'query'   => $query->query_name,
@@ -137,6 +141,61 @@ class ChatController extends Controller
     }
 
 
+    // Consume receiver API function
+    public function getData(Request $request){
+           
+        $log = ChatBotLog::create([
+            'group_id'    => $request->group_id,
+            'user_id'     => $request->user_id,
+            'sequence'    => $request->completion_logs['sequence_id'],
+            'query'       => $request->user_action,
+            'answer'      => $request->user_action,
+            'is_active'   => 1
+        ]);
+
+
+        return response()->json([
+            'message' => 'Log recorded',
+        ], 201);
+    }
+
+
+
+
+    public function getRegionProvinces(Request $request){        
+
+        $region_id = $request->input('region_id');
+        $province_id = $request->input('province_id');
+
+        $table_municipalities = DB::table('loc_municipalities')
+                ->select('id', 'mun_desc', 'mun_complete_desc')
+                ->where('reg_id', $region_id)
+                ->where('prov_id', $province_id)
+                ->get();
+
+        return response()->json($table_municipalities);
+    }
+
+
+    public function getMunicipalities(Request $request){        
+        $table_municipalities = DB::table('loc_municipalities')
+        ->select('id', 'mun_desc', 'mun_complete_desc')
+        ->where('reg_id', $request->region_id)
+        ->where('prov_id', $request->province_id)
+        ->get();
+        
+        return $table_municipalities;
+    }
+
+    // public function getMunicipalities(Request $request){        
+    //     $table_region = DB::select('select id, reg_region, reg_description from loc_regions where reg_id=' . $request->region_data . ' where mun_id');
+    //     return $table_region;
+    // }
+
+    // public function getBaranggays(Request $request){        
+    //     $table_region = DB::select('select id, reg_region, reg_description from loc_regions where 1=1');
+    //     return $table_region;
+    // }
     
 }
 
