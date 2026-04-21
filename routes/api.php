@@ -11,9 +11,15 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::prefix('chat')->group(function () {
-    Route::get('/get-step', [ChatController::class, 'data']);
-    Route::post('/get-step', [ChatController::class, 'nextStep']);
+    Route::get('/get-step',     [ChatController::class, 'data']);
+    Route::post('/get-step',    [ChatController::class, 'nextStep']);
+    Route::post('/save-logs',   [ChatController::class, 'getData']);
+
+    Route::get('/regions-provinces', [ ChatController::class, 'getRegionProvinces'] );
 });
+
+
+
 
 // Route::post('/token', function (Request $request) {
 //     $request->validate([
