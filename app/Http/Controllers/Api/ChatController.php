@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 // Models
 use App\Models\ChatBotQueries;
 use App\Models\ChatBotLog;
+use Illuminate\Support\Facades\Auth;
 
 
 
@@ -141,17 +142,28 @@ class ChatController extends Controller
     }
 
 
-    // Consume receiver API function
+
+
+    /*
+    *
+    * Consume receiver API function
+    *
+    */ 
+
     public function getData(Request $request){
-           
+    
+        $group_id   = $request->group_id;
+        $user_id    = $request->user_id;
+        $details    = $request->completion_logs;
+
         $log = ChatBotLog::create([
-            'group_id'    => $request->group_id,
-            'user_id'     => $request->user_id,
-            'sequence'    => $request->completion_logs['sequence_id'],
-            'query'       => $request->user_action,
-            'answer'      => $request->user_action,
-            'is_active'   => 1
+            'group_id'      => $group_id,
+            'user_id'       => $user_id,
+            'details'       => $details,
+            'created_by'    =>  Auth::user()->id,
+            'is_active'     => 1
         ]);
+
 
 
         return response()->json([
@@ -161,6 +173,11 @@ class ChatController extends Controller
 
 
 
+    /*
+    *
+    * Location API endpoint requests
+    *
+    */ 
 
     public function getRegion(){ 
         $regions = DB::table('loc_regions')->select('id', 'reg_region','reg_description')->get();
