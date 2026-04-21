@@ -13,7 +13,7 @@ Route::get('/user', function (Request $request) {
 Route::prefix('chat')->group(function () {
     Route::get('/get-step',     [ChatController::class, 'data']);
     Route::post('/get-step',    [ChatController::class, 'nextStep']);
-    Route::post('/save-logs',   [ChatController::class, 'getData']);
+    Route::post('/save-logs',   [ChatController::class, 'saveLog']);
 
     Route::get('/regions', [ ChatController::class, 'getRegion'] );
     Route::get('/provinces', [ ChatController::class, 'getProvinces'] );

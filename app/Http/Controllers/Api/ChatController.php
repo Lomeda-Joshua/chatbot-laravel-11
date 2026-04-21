@@ -150,7 +150,7 @@ class ChatController extends Controller
     *
     */ 
 
-    public function getData(Request $request){
+    public function saveLog(Request $request){
     
         $group_id   = $request->group_id;
         $user_id    = $request->user_id;
@@ -160,10 +160,9 @@ class ChatController extends Controller
             'group_id'      => $group_id,
             'user_id'       => $user_id,
             'details'       => $details,
-            'created_by'    =>  Auth::user()->id,
+            'created_by'    =>  Auth::id(),
             'is_active'     => 1
         ]);
-
 
 
         return response()->json([

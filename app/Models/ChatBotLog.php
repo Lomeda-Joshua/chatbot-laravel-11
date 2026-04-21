@@ -12,13 +12,15 @@ class ChatBotLog extends Model
             'id',
             'group_id',
             'user_id',
-            'sequence',
-            'query',
-            'answer',
+            'details',
             'created_at',
             'created_by',
             'updated_at',
             'updated_by',
             'is_active'
+    ];
+
+    protected $casts = [
+        'details' => 'array',
     ];
 }
