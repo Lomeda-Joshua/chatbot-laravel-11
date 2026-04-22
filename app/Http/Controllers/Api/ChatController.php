@@ -9,7 +9,9 @@ use Illuminate\Http\Request;
 // Models
 use App\Models\ChatBotQueries;
 use App\Models\ChatBotLog;
+
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 
 
@@ -149,25 +151,23 @@ class ChatController extends Controller
     * Consume receiver API function
     *
     */ 
-
-    public function saveLog(Request $request){
-    
+    public function saveLog(Request $request){     
         $group_id   = $request->group_id;
         $user_id    = $request->user_id;
-        $details    = $request->completion_logs;
-
-        $log = ChatBotLog::create([
+        $details    = json_encode($request->details);
+            
+        ChatBotLog::create([
             'group_id'      => $group_id,
             'user_id'       => $user_id,
-            'details'       => $details,
+            'details'       => json_encode($details),
             'created_by'    =>  Auth::id(),
             'is_active'     => 1
         ]);
 
-
         return response()->json([
             'message' => 'Log recorded',
         ], 201);
+
     }
 
 
