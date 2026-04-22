@@ -220,14 +220,14 @@ class ChatController extends Controller
 
     
     public function getBarangays(Request $request){   
-        // $region_input = $request->input('region_id');
-        // $province_input = $request->input('prov_id');
-        // $mun_id = $request->input('mun_id');
+        $region_input = $request->input('region_id');
+        $province_input = $request->input('prov_id');
+        $mun_id = $request->input('mun_id');
     
-        //  $table_baranggays = DB::table('loc_barangays')->select('id', 'brgy_description', 'brgy_name')
-        //  ->where('reg_id', $region_input)->
-        //  where('prov_id', $province_input)->
-        //  where('mun_id', $mun_id)->get();
+         $table_baranggays = DB::table('loc_barangays')->select('id', 'brgy_description', 'brgy_name')
+         ->where('reg_id', $region_input)->
+         where('prov_id', $province_input)->
+         where('mun_id', $mun_id)->get();
 
         return response()->json([
             'status' => 'success',
