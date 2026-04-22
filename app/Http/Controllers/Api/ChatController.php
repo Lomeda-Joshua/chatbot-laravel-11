@@ -83,8 +83,6 @@ class ChatController extends Controller
             $exploded[$column] = explode(';;', $query->$column ?? '');
         }
 
-
-
         // Step 3 — get the count from the first column (choices)
         $count = count($exploded['choices']);
 
@@ -241,21 +239,21 @@ class ChatController extends Controller
 
     public function searchBrgy(Request $request)
     {
-        $query = $request->get('q');
+        $query = $request->get('query');
 
         $brgy = Barangay::query()
             ->when($query, function ($q) use ($query) {
                 $q->whereRaw('LOWER(brgy_name) LIKE ?', ['%' . strtolower($query) . '%'])
                   ->orWhereRaw('LOWER(brgy_description) LIKE ?', ['%' . strtolower($query) . '%']);
             })
-            ->orderBy('brgy_code')
+            ->orderBy('id')
             ->limit(20)
-            ->get(['brgy_code', 'brgy_name', 'brgy_description']);
+            ->get(['id', 'brgy_name', 'brgy_description']);
 
         return response()->json(
             $brgy->map(fn ($item) => [
-                'value' => $item->brgy_name, 
-                'label' => '(' . $item->brgy_name . ') - ' . $item->brgy_description, 
+                'value' => $item->id, 
+                'label' => $item->brgy_description 
             ])
         );
     }
