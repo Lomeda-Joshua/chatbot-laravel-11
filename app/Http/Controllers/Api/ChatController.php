@@ -112,9 +112,6 @@ class ChatController extends Controller
     }
 
 
-
-
-
     /**
      * Parse all fields from raw form_details string
      */
@@ -318,14 +315,12 @@ class ChatController extends Controller
 
     public function searchBrgy(Request $request)
     {
-        $query = $request->get('query');
+        $query = $request->get('query');        
 
         $brgy = Barangay::query()
             ->when($query, function ($q) use ($query) {
-                $q->whereRaw('LOWER(brgy_name) LIKE ?', ['%' . strtolower($query) . '%'])
-                  ->orWhereRaw('LOWER(brgy_description) LIKE ?', ['%' . strtolower($query) . '%']);
+                $q->whereRaw('LOWER(brgy_name) LIKE ?', ['%' . strtolower($query) . '%']);
             })
-            ->orderBy('id')
             ->limit(20)
             ->get(['id', 'brgy_name', 'brgy_description']);
 
