@@ -305,42 +305,43 @@ class ChatController extends Controller
 
     public function searchBrgy(Request $request)
     {
-        $query = $request->get('query');        
+        $query = $request->get('query');    
+        $brgy_flag = $query;
+
+        // pagination params
+        $page = (int) $request->get('page', 1);
+        $limit = (int) $request->get('limit', 20);
+        $offset = ($page - 1) * $limit;
 
         $brgy = Barangay::query()
             ->when($query, function ($q) use ($query) {
                 $q->whereRaw('LOWER(brgy_description) LIKE ?', ['%' . strtolower($query) . '%']);
-            })
-            ->limit(20)
+            });
+
+        // total count (for hasMore)
+        $total = $brgy->count();
+
+        $brgyQuery = $brgy
+            ->orderBy('brgy_description')
+            ->offset($brgy_flag ? 0 : $offset)
+            ->limit($brgy_flag ? 1 : $limit)
             ->get(['id', 'brgy_name', 'brgy_description']);
 
-        return response()->json(
-            $brgy->map(fn ($item) => [
-                'value' => $item->id . ' ', 
-                'label' => str_replace(',', ', ', $item->brgy_description)
-            ])
-        );
+        $data = $brgyQuery->map(fn ($item) => [
+            'value' => $item->id,
+            'label' => str_replace(',', ', ', $item->brgy_description)
+        ])->values();
+
+        return response()->json([
+            'data' => $data,
+            'hasMore' => $brgy_flag ? false : ($offset + $limit) < $total,
+            'page' => $page,
+            'total' => $total,
+        ]);
+
+
     }
 
-
-
-
-    //   public function getMunicipalitieAndBarangays(Request $request){   
-
-    //     $mun_id = $request->input('mun_id');
-
-    //     $table_barangays_municipalities = DB::table('loc_barangays')
-    //         ->select('id', 'mun_id', 'mun_desc', 'brgy_name', 'brgy_description')
-    //         ->where('mun_id', $mun_id)
-    //     ->get();
-        
-    //     return response()->json([
-    //         'status' => 'success',
-    //         'data' => [
-    //             'municipal_barangays' => $table_barangays_municipalities,
-    //         ]
-    //     ]);
-    // }
     
 }
 
