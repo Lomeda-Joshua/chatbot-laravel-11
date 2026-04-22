@@ -303,44 +303,54 @@ class ChatController extends Controller
 
 
 
-    public function searchBrgy(Request $request)
-    {
-        $query = $request->get('query');    
-        $brgy_flag = $query;
+   public function searchBrgy(Request $request)
+{
+    $query = trim((string) $request->get('q', ''));
 
-        // pagination params
-        $page = (int) $request->get('page', 1);
-        $limit = (int) $request->get('limit', 20);
-        $offset = ($page - 1) * $limit;
+    // pagination params
+    $page   = (int) $request->get('page', 1);
+    $limit  = (int) $request->get('limit', 20);
+    $offset = ($page - 1) * $limit;
 
-        $brgy = Barangay::query()
-            ->when($query, function ($q) use ($query) {
-                $q->whereRaw('LOWER(brgy_description) LIKE ?', ['%' . strtolower($query) . '%']);
-            });
+    $baseQuery = Barangay::query()
+        ->when($query !== '', function ($q) use ($query) {
+            $q->whereRaw('LOWER(brgy_description) LIKE ?', ['%' . strtolower($query) . '%']);
+        });
 
-        // total count (for hasMore)
-        $total = $brgy->count();
+    // total count (for hasMore)
+    $total = $baseQuery->count();
 
-        $brgyQuery = $brgy
-            ->orderBy('brgy_description')
-            ->offset($brgy_flag ? 0 : $offset)
-            ->limit($brgy_flag ? 1 : $limit)
-            ->get(['id', 'brgy_name', 'brgy_description']);
-
-        $data = $brgyQuery->map(fn ($item) => [
+    // paginated data
+    $data = $baseQuery
+        ->orderBy('brgy_description')
+        ->offset($offset)
+        ->limit($limit)
+        ->get(['id', 'brgy_name', 'brgy_description'])
+        ->map(fn ($item) => [
             'value' => $item->id,
-            'label' => str_replace(',', ', ', $item->brgy_description)
-        ])->values();
+            'label' => str_replace(',', ', ', $item->brgy_description ?? $item->brgy_name)
+        ])
+        ->values();
 
-        return response()->json([
-            'data' => $data,
-            'hasMore' => $brgy_flag ? false : ($offset + $limit) < $total,
-            'page' => $page,
-            'total' => $total,
-        ]);
+    return response()->json([
+        'data'    => $data,
+        'hasMore' => ($offset + $limit) < $total,
+        'page'    => $page,
+        'total'   => $total,
+    ]);
+}
 
 
-    }
+
+
+
+
+
+
+
+
+
+
 
     
 }
