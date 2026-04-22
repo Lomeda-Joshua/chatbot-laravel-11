@@ -305,7 +305,7 @@ class ChatController extends Controller
 
    public function searchBrgy(Request $request)
 {
-    $query = trim((string) $request->get('q', ''));
+    $query = trim((string) $request->get('query', ''));
 
     // pagination params
     $page   = (int) $request->get('page', 1);
