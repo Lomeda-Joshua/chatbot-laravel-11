@@ -19,7 +19,7 @@ class ChatBotLog extends Model
     ];
 
     
-    // protected $casts = [
-    //     'details' => 'string',
-    // ];
+    protected $casts = [
+        'details' => 'array',
+    ];
 }

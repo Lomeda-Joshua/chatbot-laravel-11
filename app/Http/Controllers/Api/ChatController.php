@@ -154,12 +154,12 @@ class ChatController extends Controller
     public function saveLog(Request $request){     
         $group_id   = $request->group_id;
         $user_id    = $request->user_id;
-        $details    = json_encode($request->details);
+        $details    = $request->details;
             
         ChatBotLog::create([
             'group_id'      => $group_id,
             'user_id'       => $user_id,
-            'details'       => json_encode($details),
+            'details'       => $details,
             'created_by'    =>  Auth::id(),
             'is_active'     => 1
         ]);
