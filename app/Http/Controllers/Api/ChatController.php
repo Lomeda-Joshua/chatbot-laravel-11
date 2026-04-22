@@ -13,7 +13,6 @@ use App\Models\Barangay;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Str;
 
 
 
@@ -63,69 +62,6 @@ class ChatController extends Controller
         return response()->json($this->formatQuery($data));
     }
 
-    public function formatFields($string){
-                    $parts = explode(';;', $string);
-
-                    // STEP 2: get fields part
-                    $fieldsRaw = $parts[1] ?? '';
-
-                    // STEP 3: split each field
-                    $fieldItems = explode(',', $fieldsRaw);
-
-                    $fields = [];
-
-                    foreach ($fieldItems as $item) {
-                        $item = trim($item);
-
-                        // STEP 4: explode by :
-                        $segments = explode(':', $item);
-
-                        // Extract TYPE
-                        preg_match('/input\[type="(.*?)"\]/', $segments[0], $typeMatch);
-                        $type = $typeMatch[1] ?? 'text';
-
-                        $name = '';
-                        $required = false;
-                        $disabled = false;
-                        $options = [];
-
-                        foreach ($segments as $seg) {
-                            // NAME
-                            if (preg_match('/name="(.*?)"/', $seg, $match)) {
-                                $name = $match[1];
-
-                                // handle select options (|)
-                                if ($type === 'select' && str_contains($name, '|')) {
-                                    $options = explode('|', $name);
-                                    $name = 'select_field';
-                                }
-                            }
-
-                            // REQUIRED
-                            if (preg_match('/required="(.*?)"/', $seg, $match)) {
-                                $required = $match[1] === 'yes';
-                            }
-
-                            // DISABLED
-                            if (preg_match('/disabled="(.*?)"/', $seg, $match)) {
-                                $disabled = $match[1] === 'yes';
-                            }
-                        }
-
-                        $fields[] = [
-                            "type" => $type,
-                            "name" => Str::slug($name, '_'),
-                            "label" => strtoupper($name),
-                            "value" => "",
-                            "required" => $required,
-                            "disabled" => $disabled,
-                            "option" => $options
-                        ];
-                    }
-
-                    return $fields;
-    }
-
     private function formatQuery($query)
     {
         $is_form_values = explode(';;', $query->is_form);
@@ -147,8 +83,6 @@ class ChatController extends Controller
             $exploded[$column] = explode(';;', $query->$column ?? '');
         }
 
-
-
         // Step 3 — get the count from the first column (choices)
         $count = count($exploded['choices']);
 
@@ -159,25 +93,54 @@ class ChatController extends Controller
                 $hasForm = (bool) trim($exploded['is_form'][$i] ?? 0);
 
                 $actions[] = [
-                    'label'        => trim($exploded['choices'][$i] ?? ''),
-                    'isForm'       => $hasForm,
-                    'isSubmit'     => (bool) trim($exploded['is_submit'][$i] ?? 0),
-                    'isTicket'     => (bool) trim($exploded['is_ticket'][$i] ?? 0),
-                    'nextSequence' => (int) trim($exploded['navigation'][$i] ?? 0),
-                    'form'         => $hasForm ? [
-                        'description' => trim($exploded['form_description'][$i] ?? ''),
-                        'fields'      => $this->formatFields($exploded['form_details'][$i] ?? null),
-                    ] : null, // ✅ closing the ternary
-                ]; // ✅ closing $actions[]
-            }
+                        'label'        => trim($exploded['choices'][$i] ?? ''),
+                        'isForm'       => $hasForm,
+                        'isSubmit'     => (bool) trim($exploded['is_submit'][$i] ?? 0),
+                        'isTicket'     => (bool) trim($exploded['is_ticket'][$i] ?? 0),
+                        'nextSequence' => (int) trim($exploded['navigation'][$i] ?? 0),
+                        'form'         => $hasForm ? [
 
-            return [
-                'id'      => $query->id,
-                'query'   => $query->query_name,
-                'actions' => $actions,
-            ];
+                            'description' => trim($exploded['form_description'][$i] ?? ''),
+
+                            // Access the i-th group of fields and parse them
+                            'fields'      => collect(explode(',', ($exploded['form_details'][$i] ?? '')))
+                                ->map(function ($rawField) {
+                                    $rawField = trim($rawField);
+                                    
+                                    // Skip if the field definition is literally 'null' or empty
+                                    if ($rawField === 'null' || empty($rawField)) return null;
+
+                                    // Parse "input[type="email"]:email"
+                                    $parts     = explode(':', $rawField);
+                                    $rawType   = $parts[0] ?? '';
+                                    $fieldName = trim($parts[1] ?? '');
+
+                                    // Extract "email" from "input[type="email"]"
+                                    $cleanType = str_replace(['input[type="', '"]', 'input['], '', $rawType);
+
+                                    return [
+                                        'type'     => $cleanType,
+                                        'name'     => $fieldName,
+                                        'label'    => ucwords($fieldName),
+                                        'value'    => '',
+                                        'required' => true,
+                                        'disabled' => false,
+                                        'option'   => [],
+                                    ];
+                                })
+                                    ->filter() // Remove the 'null' entries
+                                    ->values() // Reset keys to [0, 1, 2...] for JSON compatibility
+                                    ->toArray(),
+                            ] : null,
+                        ];
+        }
+
+        return [
+            'id'      => $query->id,
+            'query'   => $query->query_name,
+            'actions' => $actions,
+        ];
     }
-
 
 
 
@@ -276,11 +239,12 @@ class ChatController extends Controller
 
     public function searchBrgy(Request $request)
     {
-        $query = $request->get('q');
+        $query = $request->get('query');
 
         $brgy = Barangay::query()
             ->when($query, function ($q) use ($query) {
-                $q->whereRaw('LOWER(brgy_description) LIKE ?', ['%' . strtolower($query) . '%']);
+                $q->whereRaw('LOWER(brgy_name) LIKE ?', ['%' . strtolower($query) . '%'])
+                  ->orWhereRaw('LOWER(brgy_description) LIKE ?', ['%' . strtolower($query) . '%']);
             })
             ->orderBy('id')
             ->limit(20)
