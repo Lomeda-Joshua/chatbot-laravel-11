@@ -119,7 +119,7 @@ class ChatController extends Controller
     {
         if (empty($rawFields) || $rawFields === 'null') return [];
 
-        // ✅ Split on commas ONLY outside of quotes
+        //  Split on commas ONLY outside of quotes
         $fields = preg_split('/,(?=[^"]*(?:"[^"]*"[^"]*)*$)/', $rawFields);
 
         return collect($fields)
@@ -131,11 +131,11 @@ class ChatController extends Controller
                 $parts   = explode(':', $rawField);
                 $rawType = trim($parts[0] ?? '');
 
-                // ✅ Extract type → "text", "email", "select"
+                //  Extract type → "text", "email", "select"
                 preg_match('/input\[type=["\']?(\w+)["\']?\]/', $rawType, $typeMatch);
                 $cleanType = $typeMatch[1] ?? 'text';
 
-                // ✅ Route to correct formatter
+                //  Route to correct formatter
                 return $cleanType === 'select'
                     ? $this->formatSelectField($parts)
                     : $this->formatInputField($parts, $cleanType);
@@ -185,17 +185,17 @@ class ChatController extends Controller
     */
     private function formatInputField(array $parts, string $cleanType): array
     {
-        // ✅ Extract name
+        // Extract name
         $namePart = trim($parts[1] ?? '');
         preg_match('/\[name="([^"]+)"\]/', $namePart, $nameMatch);
         $fieldName = $nameMatch[1] ?? $namePart;
 
-        // ✅ Extract required
+        // Extract required
         $requiredPart = trim($parts[2] ?? '');
         preg_match('/\[required=["\']?(\w+)["\']?\]/', $requiredPart, $requiredMatch);
         $isRequired = strtolower($requiredMatch[1] ?? 'no') === 'yes';
 
-        // ✅ Extract disabled
+        // Extract disabled
         $disabledPart = trim($parts[3] ?? '');
         preg_match('/\[disabled=["\']?(\w+)["\']?\]/', $disabledPart, $disabledMatch);
         $isDisabled = strtolower($disabledMatch[1] ?? 'no') === 'yes';
@@ -210,15 +210,6 @@ class ChatController extends Controller
             'option'   => [],
         ];
     }
-
-
-
-
-
-
-
-
-
 
 
     /*
@@ -250,7 +241,6 @@ class ChatController extends Controller
     * Location API endpoint requests
     *
     */ 
-
     public function getRegion(){ 
         $regions = DB::table('loc_regions')->select('id', 'reg_region','reg_description')->get();
 
@@ -326,8 +316,8 @@ class ChatController extends Controller
 
         return response()->json(
             $brgy->map(fn ($item) => [
-                'value' => $item->id, 
-                'label' => $item->brgy_description 
+                'value' => $item->id . ' ', 
+                'label' => str_replace(',', ', ', $item->brgy_description)
             ])
         );
     }
