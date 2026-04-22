@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 // Models
 use App\Models\ChatBotQueries;
 use App\Models\ChatBotLog;
+use App\Models\Barangay;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -170,8 +171,6 @@ class ChatController extends Controller
 
     }
 
-
-
     /*
     *
     * Location API endpoint requests
@@ -237,6 +236,30 @@ class ChatController extends Controller
             ]
         ]);
     }
+
+
+
+    public function searchBrgy(Request $request)
+    {
+        $query = $request->get('q');
+
+        $brgy = Barangay::query()
+            ->when($query, function ($q) use ($query) {
+                $q->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($query) . '%'])
+                  ->orWhereRaw('LOWER(code) LIKE ?', ['%' . strtolower($query) . '%']);
+            })
+            ->orderBy('brgy_code')
+            ->limit(20)
+            ->get(['brgy_code', 'brgy_name', 'brgy_description']);
+
+        return response()->json(
+            $brgy->map(fn ($item) => [
+                'value' => $item->brgy_name, 
+                'label' => '(' . $item->brgy_name . ') - ' . $item->brgy_description, 
+            ])
+        );
+    }
+
 
 
 
