@@ -87,7 +87,8 @@ class ChatController extends Controller
         $count = count($exploded['choices']);
 
         // Step 4 — loop by index and build each action
-        $actions = [];
+        $actions = [];        
+
         for ($i = 0; $i < $count; $i++) {
                 // Determine if this specific action requires a form
                 $hasForm = (bool) trim($exploded['is_form'][$i] ?? 0);
@@ -98,41 +99,49 @@ class ChatController extends Controller
                         'isSubmit'     => (bool) trim($exploded['is_submit'][$i] ?? 0),
                         'isTicket'     => (bool) trim($exploded['is_ticket'][$i] ?? 0),
                         'nextSequence' => (int) trim($exploded['navigation'][$i] ?? 0),
-                        'form'         => $hasForm ? [
+                        'fields' => collect(explode(',', ($exploded['form_details'][$i] ?? '')))
+                                    ->map(function ($rawField) {
+                                        $rawField = trim($rawField);
 
-                            'description' => trim($exploded['form_description'][$i] ?? ''),
+                                        if ($rawField === 'null' || empty($rawField)) return null;
 
-                            // Access the i-th group of fields and parse them
-                            'fields'      => collect(explode(',', ($exploded['form_details'][$i] ?? '')))
-                                ->map(function ($rawField) {
-                                    $rawField = trim($rawField);
-                                    
-                                    // Skip if the field definition is literally 'null' or empty
-                                    if ($rawField === 'null' || empty($rawField)) return null;
+                                        // Parse each attribute by splitting on ':'
+                                        $parts   = explode(':', $rawField);
+                                        $rawType = trim($parts[0] ?? '');
 
-                                    // Parse "input[type="email"]:email"
-                                    $parts     = explode(':', $rawField);
-                                    $rawType   = $parts[0] ?? '';
-                                    $fieldName = trim($parts[1] ?? '');
+                                        // ✅ Extract type from input[type="email"] → "email"
+                                        preg_match('/input\[type=["\']?(\w+)["\']?\]/', $rawType, $typeMatch);
+                                        $cleanType = $typeMatch[1] ?? 'text';
 
-                                    // Extract "email" from "input[type="email"]"
-                                    $cleanType = str_replace(['input[type="', '"]', 'input['], '', $rawType);
+                                        // ✅ Extract name from [name="email"] → "email"
+                                        $namePart = trim($parts[1] ?? '');
+                                        preg_match('/\[name=["\']?([^"\'^\]]+)["\']?\]/', $namePart, $nameMatch);
+                                        $fieldName = $nameMatch[1] ?? $namePart;
 
-                                    return [
-                                        'type'     => $cleanType,
-                                        'name'     => $fieldName,
-                                        'label'    => ucwords($fieldName),
-                                        'value'    => '',
-                                        'required' => true,
-                                        'disabled' => false,
-                                        'option'   => [],
-                                    ];
-                                })
-                                    ->filter() // Remove the 'null' entries
-                                    ->values() // Reset keys to [0, 1, 2...] for JSON compatibility
+                                        // ✅ Extract required from [required="yes"] → true/false
+                                        $requiredPart = trim($parts[2] ?? '');
+                                        preg_match('/\[required=["\']?(\w+)["\']?\]/', $requiredPart, $requiredMatch);
+                                        $isRequired = strtolower($requiredMatch[1] ?? 'no') === 'yes';
+
+                                        // ✅ Extract disabled from [disabled="yes"] → true/false
+                                        $disabledPart = trim($parts[3] ?? '');
+                                        preg_match('/\[disabled=["\']?(\w+)["\']?\]/', $disabledPart, $disabledMatch);
+                                        $isDisabled = strtolower($disabledMatch[1] ?? 'no') === 'yes';
+
+                                        return [
+                                            'type'     => $cleanType,
+                                            'name'     => $fieldName,
+                                            'label'    => ucwords(str_replace('_', ' ', $fieldName)), // "business_name" → "Business Name"
+                                            'value'    => '',
+                                            'required' => $isRequired,
+                                            'disabled' => $isDisabled,
+                                            'option'   => [],
+                                        ];
+                                    })
+                                    ->filter()
+                                    ->values()
                                     ->toArray(),
-                            ] : null,
-                        ];
+                ];
         }
 
         return [
