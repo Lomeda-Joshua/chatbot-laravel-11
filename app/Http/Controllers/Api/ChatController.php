@@ -13,6 +13,7 @@ use App\Models\Barangay;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Str;
 
 
 
@@ -62,6 +63,69 @@ class ChatController extends Controller
         return response()->json($this->formatQuery($data));
     }
 
+    public function formatFields($string){
+                    $parts = explode(';;', $string);
+
+                    // STEP 2: get fields part
+                    $fieldsRaw = $parts[1] ?? '';
+
+                    // STEP 3: split each field
+                    $fieldItems = explode(',', $fieldsRaw);
+
+                    $fields = [];
+
+                    foreach ($fieldItems as $item) {
+                        $item = trim($item);
+
+                        // STEP 4: explode by :
+                        $segments = explode(':', $item);
+
+                        // Extract TYPE
+                        preg_match('/input\[type="(.*?)"\]/', $segments[0], $typeMatch);
+                        $type = $typeMatch[1] ?? 'text';
+
+                        $name = '';
+                        $required = false;
+                        $disabled = false;
+                        $options = [];
+
+                        foreach ($segments as $seg) {
+                            // NAME
+                            if (preg_match('/name="(.*?)"/', $seg, $match)) {
+                                $name = $match[1];
+
+                                // handle select options (|)
+                                if ($type === 'select' && str_contains($name, '|')) {
+                                    $options = explode('|', $name);
+                                    $name = 'select_field';
+                                }
+                            }
+
+                            // REQUIRED
+                            if (preg_match('/required="(.*?)"/', $seg, $match)) {
+                                $required = $match[1] === 'yes';
+                            }
+
+                            // DISABLED
+                            if (preg_match('/disabled="(.*?)"/', $seg, $match)) {
+                                $disabled = $match[1] === 'yes';
+                            }
+                        }
+
+                        $fields[] = [
+                            "type" => $type,
+                            "name" => Str::slug($name, '_'),
+                            "label" => strtoupper($name),
+                            "value" => "",
+                            "required" => $required,
+                            "disabled" => $disabled,
+                            "option" => $options
+                        ];
+                    }
+
+                    return $fields;
+    }
+
     private function formatQuery($query)
     {
         $is_form_values = explode(';;', $query->is_form);
@@ -83,72 +147,37 @@ class ChatController extends Controller
             $exploded[$column] = explode(';;', $query->$column ?? '');
         }
 
+
+
         // Step 3 — get the count from the first column (choices)
         $count = count($exploded['choices']);
 
         // Step 4 — loop by index and build each action
-        $actions = [];        
-
+        $actions = [];
         for ($i = 0; $i < $count; $i++) {
                 // Determine if this specific action requires a form
                 $hasForm = (bool) trim($exploded['is_form'][$i] ?? 0);
 
                 $actions[] = [
-                        'label'        => trim($exploded['choices'][$i] ?? ''),
-                        'isForm'       => $hasForm,
-                        'isSubmit'     => (bool) trim($exploded['is_submit'][$i] ?? 0),
-                        'isTicket'     => (bool) trim($exploded['is_ticket'][$i] ?? 0),
-                        'nextSequence' => (int) trim($exploded['navigation'][$i] ?? 0),
-                        'form' => collect(explode(',', ($exploded['form_details'][$i] ?? '')))
-                                        ->map(function ($rawField) {
-                                            $rawField = trim($rawField);
+                    'label'        => trim($exploded['choices'][$i] ?? ''),
+                    'isForm'       => $hasForm,
+                    'isSubmit'     => (bool) trim($exploded['is_submit'][$i] ?? 0),
+                    'isTicket'     => (bool) trim($exploded['is_ticket'][$i] ?? 0),
+                    'nextSequence' => (int) trim($exploded['navigation'][$i] ?? 0),
+                    'form'         => $hasForm ? [
+                        'description' => trim($exploded['form_description'][$i] ?? ''),
+                        'fields'      => $this->formatFields($exploded['form_details'][$i] ?? null),
+                    ] : null, // ✅ closing the ternary
+                ]; // ✅ closing $actions[]
+            }
 
-                                            if ($rawField === 'null' || empty($rawField)) return null;
-
-                                            $parts   = explode(':', $rawField);
-                                            $rawType = trim($parts[0] ?? '');
-
-                                            // ✅ Extract type → "email" from input[type="email"]
-                                            preg_match('/input\[type=["\']?(\w+)["\']?\]/', $rawType, $typeMatch);
-                                            $cleanType = $typeMatch[1] ?? 'text';
-
-                                            // ✅ Extract name → "email" from [name="email"]
-                                            $namePart = trim($parts[1] ?? '');
-                                            preg_match('/\[name=["\']?([^"\'^\]]+)["\']?\]/', $namePart, $nameMatch);
-                                            $fieldName = $nameMatch[1] ?? $namePart;
-
-                                            // ✅ Extract required → true/false from [required="yes"]
-                                            $requiredPart = trim($parts[2] ?? '');
-                                            preg_match('/\[required=["\']?(\w+)["\']?\]/', $requiredPart, $requiredMatch);
-                                            $isRequired = strtolower($requiredMatch[1] ?? 'no') === 'yes';
-
-                                            // ✅ Extract disabled → true/false from [disabled="yes"]
-                                            $disabledPart = trim($parts[3] ?? '');
-                                            preg_match('/\[disabled=["\']?(\w+)["\']?\]/', $disabledPart, $disabledMatch);
-                                            $isDisabled = strtolower($disabledMatch[1] ?? 'no') === 'yes';
-
-                                            return [
-                                                'type'     => $cleanType,
-                                                'name'     => $fieldName,                                    // "business_name"
-                                                'label'    => ucwords(str_replace('_', ' ', $fieldName)),   // "Business Name"
-                                                'value'    => '',
-                                                'required' => $isRequired,
-                                                'disabled' => $isDisabled,
-                                                'option'   => [],
-                                            ];
-                                        })
-                                        ->filter()
-                                        ->values()
-                                        ->toArray(),
-                ];
-        }
-
-        return [
-            'id'      => $query->id,
-            'query'   => $query->query_name,
-            'actions' => $actions,
-        ];
+            return [
+                'id'      => $query->id,
+                'query'   => $query->query_name,
+                'actions' => $actions,
+            ];
     }
+
 
 
 
