@@ -99,48 +99,47 @@ class ChatController extends Controller
                         'isSubmit'     => (bool) trim($exploded['is_submit'][$i] ?? 0),
                         'isTicket'     => (bool) trim($exploded['is_ticket'][$i] ?? 0),
                         'nextSequence' => (int) trim($exploded['navigation'][$i] ?? 0),
-                        'fields' => collect(explode(',', ($exploded['form_details'][$i] ?? '')))
-                                    ->map(function ($rawField) {
-                                        $rawField = trim($rawField);
+                        'form' => collect(explode(',', ($exploded['form_details'][$i] ?? '')))
+                                        ->map(function ($rawField) {
+                                            $rawField = trim($rawField);
 
-                                        if ($rawField === 'null' || empty($rawField)) return null;
+                                            if ($rawField === 'null' || empty($rawField)) return null;
 
-                                        // Parse each attribute by splitting on ':'
-                                        $parts   = explode(':', $rawField);
-                                        $rawType = trim($parts[0] ?? '');
+                                            $parts   = explode(':', $rawField);
+                                            $rawType = trim($parts[0] ?? '');
 
-                                        // ✅ Extract type from input[type="email"] → "email"
-                                        preg_match('/input\[type=["\']?(\w+)["\']?\]/', $rawType, $typeMatch);
-                                        $cleanType = $typeMatch[1] ?? 'text';
+                                            // ✅ Extract type → "email" from input[type="email"]
+                                            preg_match('/input\[type=["\']?(\w+)["\']?\]/', $rawType, $typeMatch);
+                                            $cleanType = $typeMatch[1] ?? 'text';
 
-                                        // ✅ Extract name from [name="email"] → "email"
-                                        $namePart = trim($parts[1] ?? '');
-                                        preg_match('/\[name=["\']?([^"\'^\]]+)["\']?\]/', $namePart, $nameMatch);
-                                        $fieldName = $nameMatch[1] ?? $namePart;
+                                            // ✅ Extract name → "email" from [name="email"]
+                                            $namePart = trim($parts[1] ?? '');
+                                            preg_match('/\[name=["\']?([^"\'^\]]+)["\']?\]/', $namePart, $nameMatch);
+                                            $fieldName = $nameMatch[1] ?? $namePart;
 
-                                        // ✅ Extract required from [required="yes"] → true/false
-                                        $requiredPart = trim($parts[2] ?? '');
-                                        preg_match('/\[required=["\']?(\w+)["\']?\]/', $requiredPart, $requiredMatch);
-                                        $isRequired = strtolower($requiredMatch[1] ?? 'no') === 'yes';
+                                            // ✅ Extract required → true/false from [required="yes"]
+                                            $requiredPart = trim($parts[2] ?? '');
+                                            preg_match('/\[required=["\']?(\w+)["\']?\]/', $requiredPart, $requiredMatch);
+                                            $isRequired = strtolower($requiredMatch[1] ?? 'no') === 'yes';
 
-                                        // ✅ Extract disabled from [disabled="yes"] → true/false
-                                        $disabledPart = trim($parts[3] ?? '');
-                                        preg_match('/\[disabled=["\']?(\w+)["\']?\]/', $disabledPart, $disabledMatch);
-                                        $isDisabled = strtolower($disabledMatch[1] ?? 'no') === 'yes';
+                                            // ✅ Extract disabled → true/false from [disabled="yes"]
+                                            $disabledPart = trim($parts[3] ?? '');
+                                            preg_match('/\[disabled=["\']?(\w+)["\']?\]/', $disabledPart, $disabledMatch);
+                                            $isDisabled = strtolower($disabledMatch[1] ?? 'no') === 'yes';
 
-                                        return [
-                                            'type'     => $cleanType,
-                                            'name'     => $fieldName,
-                                            'label'    => ucwords(str_replace('_', ' ', $fieldName)), // "business_name" → "Business Name"
-                                            'value'    => '',
-                                            'required' => $isRequired,
-                                            'disabled' => $isDisabled,
-                                            'option'   => [],
-                                        ];
-                                    })
-                                    ->filter()
-                                    ->values()
-                                    ->toArray(),
+                                            return [
+                                                'type'     => $cleanType,
+                                                'name'     => $fieldName,                                    // "business_name"
+                                                'label'    => ucwords(str_replace('_', ' ', $fieldName)),   // "Business Name"
+                                                'value'    => '',
+                                                'required' => $isRequired,
+                                                'disabled' => $isDisabled,
+                                                'option'   => [],
+                                            ];
+                                        })
+                                        ->filter()
+                                        ->values()
+                                        ->toArray(),
                 ];
         }
 
