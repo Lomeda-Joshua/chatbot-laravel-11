@@ -88,51 +88,20 @@ class ChatController extends Controller
 
         // Step 4 — loop by index and build each action
         $actions = [];
+
         for ($i = 0; $i < $count; $i++) {
-                // Determine if this specific action requires a form
-                $hasForm = (bool) trim($exploded['is_form'][$i] ?? 0);
-
-                $actions[] = [
-                        'label'        => trim($exploded['choices'][$i] ?? ''),
-                        'isForm'       => $hasForm,
-                        'isSubmit'     => (bool) trim($exploded['is_submit'][$i] ?? 0),
-                        'isTicket'     => (bool) trim($exploded['is_ticket'][$i] ?? 0),
-                        'nextSequence' => (int) trim($exploded['navigation'][$i] ?? 0),
-                        'form'         => $hasForm ? [
-
-                            'description' => trim($exploded['form_description'][$i] ?? ''),
-
-                            // Access the i-th group of fields and parse them
-                            'fields'      => collect(explode(',', ($exploded['form_details'][$i] ?? '')))
-                                ->map(function ($rawField) {
-                                    $rawField = trim($rawField);
-                                    
-                                    // Skip if the field definition is literally 'null' or empty
-                                    if ($rawField === 'null' || empty($rawField)) return null;
-
-                                    // Parse "input[type="email"]:email"
-                                    $parts     = explode(':', $rawField);
-                                    $rawType   = $parts[0] ?? '';
-                                    $fieldName = trim($parts[1] ?? '');
-
-                                    // Extract "email" from "input[type="email"]"
-                                    $cleanType = str_replace(['input[type="', '"]', 'input['], '', $rawType);
-
-                                    return [
-                                        'type'     => $cleanType,
-                                        'name'     => $fieldName,
-                                        'label'    => ucwords($fieldName),
-                                        'value'    => '',
-                                        'required' => true,
-                                        'disabled' => false,
-                                        'option'   => [],
-                                    ];
-                                })
-                                    ->filter() // Remove the 'null' entries
-                                    ->values() // Reset keys to [0, 1, 2...] for JSON compatibility
-                                    ->toArray(),
-                            ] : null,
-                        ];
+            $hasForm   = (bool) trim($exploded['is_form'][$i] ?? 0);
+            $actions[] = [
+                'label'        => trim($exploded['choices'][$i] ?? ''),
+                'isForm'       => $hasForm,
+                'isSubmit'     => (bool) trim($exploded['is_submit'][$i] ?? 0),
+                'isTicket'     => (bool) trim($exploded['is_ticket'][$i] ?? 0),
+                'nextSequence' => (int) trim($exploded['navigation'][$i] ?? 0),
+                'form'         => $hasForm ? [
+                    'description' => trim($exploded['form_description'][$i] ?? ''),
+                    'fields'      => $this->formatFields($exploded['form_details'][$i] ?? null),
+                ] : null,
+            ];
         }
 
         return [
@@ -141,6 +110,116 @@ class ChatController extends Controller
             'actions' => $actions,
         ];
     }
+
+
+
+
+
+    /**
+     * Parse all fields from raw form_details string
+     */
+    private function formatFields(?string $rawFields): array
+    {
+        if (empty($rawFields) || $rawFields === 'null') return [];
+
+        // ✅ Split on commas ONLY outside of quotes
+        $fields = preg_split('/,(?=[^"]*(?:"[^"]*"[^"]*)*$)/', $rawFields);
+
+        return collect($fields)
+            ->map(function ($rawField) {
+                $rawField = trim($rawField);
+
+                if ($rawField === 'null' || empty($rawField)) return null;
+
+                $parts   = explode(':', $rawField);
+                $rawType = trim($parts[0] ?? '');
+
+                // ✅ Extract type → "text", "email", "select"
+                preg_match('/input\[type=["\']?(\w+)["\']?\]/', $rawType, $typeMatch);
+                $cleanType = $typeMatch[1] ?? 'text';
+
+                // ✅ Route to correct formatter
+                return $cleanType === 'select'
+                    ? $this->formatSelectField($parts)
+                    : $this->formatInputField($parts, $cleanType);
+            })
+            ->filter()
+            ->values()
+            ->toArray();
+    }
+
+    /**
+     * Format a select field
+     * Raw: input[type="select"]:[name="Barangay, Municipality|City, Province, Region"]
+     */
+    private function formatSelectField(array $parts): array
+    {
+        $nameSection = trim($parts[1] ?? '');
+        preg_match('/\[name="([^"]+)"\]/', $nameSection, $nameMatch);
+        $rawName = $nameMatch[1] ?? $nameSection;
+
+        // "Barangay, Municipality|City, Province, Region"
+        // Split on FIRST comma → fieldName vs options
+        $commaPos  = strpos($rawName, ',');
+        $fieldName = $commaPos !== false 
+            ? trim(substr($rawName, 0, $commaPos)) 
+            : trim($rawName);
+        $optionStr = $commaPos !== false 
+            ? trim(substr($rawName, $commaPos + 1)) 
+            : '';
+        $options   = $optionStr 
+            ? array_map('trim', explode('|', $optionStr)) 
+            : [];
+
+        return [
+            'type'     => 'select',
+            'name'     => $fieldName,
+            'label'    => ucwords(strtolower($fieldName)),
+            'value'    => '',
+            'required' => true,
+            'disabled' => false,
+            'option'   => $options,
+        ];
+    }
+
+    /**
+    * Format a regular input field (text, email, textarea, etc.)
+    * Raw: input[type="text"]:[name="Business Name"]:[required="yes"]:[disabled="no"]
+    */
+    private function formatInputField(array $parts, string $cleanType): array
+    {
+        // ✅ Extract name
+        $namePart = trim($parts[1] ?? '');
+        preg_match('/\[name="([^"]+)"\]/', $namePart, $nameMatch);
+        $fieldName = $nameMatch[1] ?? $namePart;
+
+        // ✅ Extract required
+        $requiredPart = trim($parts[2] ?? '');
+        preg_match('/\[required=["\']?(\w+)["\']?\]/', $requiredPart, $requiredMatch);
+        $isRequired = strtolower($requiredMatch[1] ?? 'no') === 'yes';
+
+        // ✅ Extract disabled
+        $disabledPart = trim($parts[3] ?? '');
+        preg_match('/\[disabled=["\']?(\w+)["\']?\]/', $disabledPart, $disabledMatch);
+        $isDisabled = strtolower($disabledMatch[1] ?? 'no') === 'yes';
+
+        return [
+            'type'     => $cleanType,
+            'name'     => $fieldName,
+            'label'    => ucwords(strtolower($fieldName)),
+            'value'    => '',
+            'required' => $isRequired,
+            'disabled' => $isDisabled,
+            'option'   => [],
+        ];
+    }
+
+
+
+
+
+
+
 
 
 
