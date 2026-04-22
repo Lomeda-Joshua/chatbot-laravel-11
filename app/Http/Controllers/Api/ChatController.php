@@ -245,8 +245,8 @@ class ChatController extends Controller
 
         $brgy = Barangay::query()
             ->when($query, function ($q) use ($query) {
-                $q->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($query) . '%'])
-                  ->orWhereRaw('LOWER(code) LIKE ?', ['%' . strtolower($query) . '%']);
+                $q->whereRaw('LOWER(brgy_name) LIKE ?', ['%' . strtolower($query) . '%'])
+                  ->orWhereRaw('LOWER(brgy_description) LIKE ?', ['%' . strtolower($query) . '%']);
             })
             ->orderBy('brgy_code')
             ->limit(20)
