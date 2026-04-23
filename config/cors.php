@@ -19,7 +19,12 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://127.0.0.1:8000','https://api-chatbot.f-dci.com', 'https://web-chatbot.f-dci.com', 'https://odrs.f-dci.com'],
+    'allowed_origins' => [
+        'http://127.0.0.1:8000', 
+        'http://localhost:8006', 
+        'https://api-chatbot.f-dci.com', 
+        'https://web-chatbot.f-dci.com', 
+        'https://odrs.f-dci.com'],
 
     'allowed_origins_patterns' => [],
 
