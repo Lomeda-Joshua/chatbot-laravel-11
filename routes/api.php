@@ -20,7 +20,6 @@ Route::prefix('chat')->group(function () {
     Route::get('/municipalities', [ ChatController::class, 'getMunicipalities'] );
     Route::get('/barangays', [ ChatController::class, 'getBarangays'] );
     Route::get('/search-barangays', [ ChatController::class, 'searchBrgy'] );
-
 });
 
 
