@@ -13,29 +13,29 @@ use App\Models\Barangay;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-
+use Illuminate\Support\Facades\Http;
 
 
 class ChatController extends Controller
 {
-    public function index()
-    {
-        $data = ChatBotQueries::all();
-        return response()->json($data);
-    }
-
-
+    /* 
+    * function for accessing the initial step on chatbot api
+    *
+    */
     public function data(Request $request)
     { 
         $group_id = $request->query('group_id');
         $sequence_id = $request->query('sequence_id');
 
         if(isset($sequence_id)){
+
             // Initial load request to API, send sequence 1 first 
             $data = ChatBotQueries::where('group_id', $group_id)
                 ->where('sequence', $sequence_id)       
                 ->first();
+
         }else{
+
             $data = ChatBotQueries::where('group_id', $group_id)
                 ->where('sequence', 1)       
                 ->first();
@@ -214,13 +214,23 @@ class ChatController extends Controller
 
     /*
     *
-    * Consume receiver API function
+    * Saving of chatbot log
     *
     */ 
     public function saveLog(Request $request){     
         $group_id   = $request->group_id;
         $user_id    = $request->user_id;
         $details    = $request->details;
+
+
+        // $url_api = "https://ticket.f-dci.com/DTI_API/api/";
+        // $url_endpoint = "Incident/viewallrelatedtickets?";
+
+        // Http::asForm()->post($url_api . $url_endpoint, [
+        //     'customerId' => 00000001
+        // ]);
+
+        
             
         ChatBotLog::create([
             'group_id'      => $group_id,
@@ -230,15 +240,27 @@ class ChatController extends Controller
             'is_active'     => 1
         ]);
 
+        
+
         return response()->json([
             'message' => 'Log recorded',
         ], 201);
 
     }
 
+
+
+    public function compileData(){
+
+        
+
+    }
+
+
+
     /*
     *
-    * Location API endpoint requests
+    * Select input of location API endpoint requests
     *
     */ 
     public function getRegion(){ 
@@ -281,7 +303,6 @@ class ChatController extends Controller
         ]);
     }
 
-
     
     public function getBarangays(Request $request){   
         $region_input = $request->input('region_id');
@@ -302,56 +323,43 @@ class ChatController extends Controller
     }
 
 
+    public function searchBrgy(Request $request){
+        $query = trim((string) $request->get('query', ''));
 
-   public function searchBrgy(Request $request)
-{
-    $query = trim((string) $request->get('query', ''));
+        // pagination params
+        $page   = (int) $request->get('page', 1);
+        $limit  = (int) $request->get('limit', 20);
+        $offset = ($page - 1) * $limit;
 
-    // pagination params
-    $page   = (int) $request->get('page', 1);
-    $limit  = (int) $request->get('limit', 20);
-    $offset = ($page - 1) * $limit;
+        $baseQuery = Barangay::query()
+            ->when($query !== '', function ($q) use ($query) {
+                $q->whereRaw('LOWER(brgy_description) LIKE ?', ['%' . strtolower($query) . '%']);
+            });
 
-    $baseQuery = Barangay::query()
-        ->when($query !== '', function ($q) use ($query) {
-            $q->whereRaw('LOWER(brgy_description) LIKE ?', ['%' . strtolower($query) . '%']);
-        });
+        // total count (for hasMore)
+        $total = $baseQuery->count();
 
-    // total count (for hasMore)
-    $total = $baseQuery->count();
+        // paginated data
+        $data = $baseQuery
+            ->orderBy('brgy_description')
+            ->offset($offset)
+            ->limit($limit)
+            ->get(['id', 'brgy_name', 'brgy_description'])
+            ->map(fn ($item) => [
+                'value' => $item->id,
+                'label' => str_replace(',', ', ', $item->brgy_description ?? $item->brgy_name)
+            ])
+            ->values();
 
-    // paginated data
-    $data = $baseQuery
-        ->orderBy('brgy_description')
-        ->offset($offset)
-        ->limit($limit)
-        ->get(['id', 'brgy_name', 'brgy_description'])
-        ->map(fn ($item) => [
-            'value' => $item->id,
-            'label' => str_replace(',', ', ', $item->brgy_description ?? $item->brgy_name)
-        ])
-        ->values();
-
-    return response()->json([
-        'data'    => $data,
-        'hasMore' => ($offset + $limit) < $total,
-        'page'    => $page,
-        'total'   => $total,
-    ]);
-}
+        return response()->json([
+            'data'    => $data,
+            'hasMore' => ($offset + $limit) < $total,
+            'page'    => $page,
+            'total'   => $total,
+        ]);
+    }
 
 
 
-
-
-
-
-
-
-
-
-
-
-    
 }
 
