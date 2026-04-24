@@ -2,16 +2,23 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ChatbotConstructorController;
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\SSOLoginController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\ChatController;
-use Illuminate\Http\Request;
 
-use App\Models\User;
+// ===== SSO Routes =====
+Route::get('sso/authenticate', [SSOLoginController::class, 'authenticate'])
+    ->name('sso.authenticate');
 
+Route::get('/autologin', [SSOLoginController::class, 'loginWithToken'])
+    ->name('sso.autologin');
 
-Route::get('/login', [AuthenticatedSessionController::class, 'create'])
-        ->name('login');
+Route::post('sso/logout', [SSOLoginController::class, 'logout'])
+    ->name('sso.logout');
+
+// Redirect /login to Unified SSO
+Route::get('/login', function () {
+    return redirect(rtrim(config('sso.project1.url'), '/') . '/login');
+})->name('login');
 
 Route::get('/dashboard', function () {
 
@@ -19,26 +26,21 @@ Route::get('/dashboard', function () {
     // return view('dashboard', compact($logged_user));
     return view('dashboard');
 
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->middleware(['auth'])->name('dashboard');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
 // Chatbot constructor
-Route::get('/chatbot-constuctor',[ChatbotConstructorController::class, 'index'])->middleware('auth')->name('chatbot-constructor');
+Route::get('/chatbot-constuctor',[ChatbotConstructorController::class, 'index'])->middleware(['auth'])->name('chatbot-constructor');
 
 
 Route::get('/', function () {
-    return response()->json([
-        'timestamp' => now()->format('Y-m-d H:i:s O'),
-        'status'    => 401,
-        'error'     => 'Unauthorized',
-        'path'      => '/'
-    ], 401);
-});
+    return redirect('/dashboard');
+})->middleware(['auth']);
 
 
 

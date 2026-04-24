@@ -3,13 +3,25 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ChatController;
-use App\Models\User;
-use Illuminate\Support\Facades\Hash;
+use App\Http\Controllers\Api\SsoController;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+// ===== Public SSO Routes (No auth required) =====
+Route::prefix('sso')->group(function () {
+    Route::post('/login', [SsoController::class, 'login']);
+    Route::post('/verify-token', [SsoController::class, 'verifySsoToken']);
+    Route::post('/logout', [SsoController::class, 'ssoLogout']);
+    Route::post('/force-logout', [SsoController::class, 'forceLogout']);
+});
 
+// ===== Protected API Routes =====
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/user', [SsoController::class, 'user']);
+    Route::post('/sso/generate-token', [SsoController::class, 'generateSsoToken']);
+    Route::post('/logout', [SsoController::class, 'logout']);
+    Route::post('/logout-all', [SsoController::class, 'logoutAll']);
+});
+
+// ===== Chat Routes =====
 Route::prefix('chat')->group(function () {
     Route::get('/get-step',     [ChatController::class, 'data']);
     Route::post('/get-step',    [ChatController::class, 'nextStep']);
