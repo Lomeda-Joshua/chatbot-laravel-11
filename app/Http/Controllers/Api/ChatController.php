@@ -221,17 +221,57 @@ class ChatController extends Controller
         $group_id   = $request->group_id;
         $user_id    = $request->user_id;
         $details    = $request->details;
-
-            
+        $is_ticket  = $request->is_ticket;
+        
+        // Log creation
         ChatBotLog::create([
             'group_id'      => $group_id,
             'user_id'       => $user_id,
             'details'       => $details,
-            'created_by'    =>  Auth::id(),
+            'created_by'    => Auth::id(),
             'is_active'     => 1
         ]);
-
         
+
+        if($is_ticket == 1){
+            $details_decoded = json_decode($request->details, true);
+
+            // Guard against invalid JSON
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return response()->json([
+                    'message' => 'Invalid JSON in details field.',
+                    'error'   => json_last_error_msg(),
+                ], 422);
+            }
+
+            // Extract fields array from the nested structure
+            $fields = $details_decoded['actions'][0]['form']['fields'] ?? [];
+
+            // Build a flat key => value map using the `name` property
+            $form = collect($fields)->keyBy('name')->map(fn($field) => $field['value']);
+
+            $payload = [
+                'CustomerId'                    => $user_id ?? null,    
+                'BusinessName2'                 => $form['business_name'] ?? null,
+                'RepresentativeName2'           => $form['representative_last_name'] . " " . $details_decoded['representative_first_name'],
+                'Email2'                        => $form['email'] ?? null,
+            ];
+            
+        }
+        $multipart = Http::asMultipart();
+
+        // Send as multipart form-data to the external API
+        $response = $multipart->post(
+            'https://ticket.f-dci.com/DTI_API/api/Incident/create'
+        );
+
+        if ($response->failed()) {
+            return response()->json([
+                'message' => 'External API error.',
+                'error'   => $response->json() ?? $response->body(),
+            ], $response->status());
+        }
+
 
         return response()->json([
             'message' => 'Log recorded',
