@@ -222,44 +222,20 @@ class ChatController extends Controller
         $user_id    = $request->user_id;
         $details    = $request->details;
 
-        $url_api = "https://ticket.f-dci.com/DTI_API/api/";
-        $url_endpoint = "Incident/viewallrelatedtickets?";
-
-        $get_log = Http::asForm()->post($url_api . $url_endpoint, [
-            'customerid' => $request->customerId
-        ]);
-
-        // dd($get_log);
-
-        // if($get_log){
-        //     return response()->json([
-        //         'success' => false,
-        //         'message' => 'External API failed',
-        //         'status' => $get_log->status()
-        //     ], 200);
-        // }
             
-        // ChatBotLog::create([
-        //     'group_id'      => $group_id,
-        //     'user_id'       => $user_id,
-        //     'details'       => $details,
-        //     'created_by'    =>  Auth::id(),
-        //     'is_active'     => 1
-        // ]);
+        ChatBotLog::create([
+            'group_id'      => $group_id,
+            'user_id'       => $user_id,
+            'details'       => $details,
+            'created_by'    =>  Auth::id(),
+            'is_active'     => 1
+        ]);
 
         
 
         return response()->json([
             'message' => 'Log recorded',
         ], 201);
-
-    }
-
-
-
-    public function compileData(){
-
-        
 
     }
 

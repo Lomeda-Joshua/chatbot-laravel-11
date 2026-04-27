@@ -1,10 +1,16 @@
 <?php
 
+use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Auth\AuthenticationException;
-use Illuminate\Http\Request;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Http\Middleware\HandleCors;
+use Illuminate\Session\Middleware\StartSession;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -12,23 +18,42 @@ return Application::configure(basePath: dirname(__DIR__))
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
-        apiPrefix: 'api', 
-
-
     )
     ->withMiddleware(function (Middleware $middleware) {
-                $middleware->statefulApi();
+        // Redirect to Unified login when authentication fails
+        $middleware->redirectGuestsTo(function () {
+            return rtrim(config('sso.project1.url'), '/') . '/login';
+        });
+
+        // Global middleware - Handle CORS first
+        $middleware->use([
+            HandleCors::class,
+        ]);
+
+        // API middleware
+        $middleware->api(prepend: [
+            EnsureFrontendRequestsAreStateful::class,
+        ]);
+
+        // Web middleware (session + csrf + cookies)
+        $middleware->web(prepend: [
+            EncryptCookies::class,
+            AddQueuedCookiesToResponse::class,
+            StartSession::class,
+            ShareErrorsFromSession::class,
+            ValidateCsrfToken::class,
+        ]);
+
+        // Skip CSRF verification for specific API routes
+        $middleware->validateCsrfTokens(except: [
+            'api/sso/*',
+        ]);
+
+        // Aliases
+        $middleware->alias([
+            'verified' => EnsureEmailIsVerified::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        $exceptions->renderable(function (AuthenticationException $e, Request $request) {
-            // Ensure the request expects a JSON response, common in Sanctum/Axios setups
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'timestamp' => now()->format('Y-m-d H:i:s O'), 
-                    'status'    => 401,
-                    'error'     => 'Unauthorized',
-                    'path'      => '/' . ltrim($request->path(), '/') 
-                ], 401);
-            }
-        });
+        //
     })->create();
