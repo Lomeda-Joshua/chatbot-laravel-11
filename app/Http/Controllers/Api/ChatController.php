@@ -245,38 +245,83 @@ class ChatController extends Controller
             }
 
             // Extract fields array from the nested structure
-            $fields = $details_decoded['actions'][0]['form']['fields'] ?? [];
+            $fields = $details_decoded['actions'][0]['form']['fields'] ?? [];            
 
             // Build a flat key => value map using the `name` property
             $form = collect($fields)->keyBy('name')->map(fn($field) => $field['value']);
 
             $payload = [
-                'CustomerId'                    => $user_id ?? null,    
+                'CustomerId'                    => $user_id ?? null,     
                 'BusinessName2'                 => $form['business_name'] ?? null,
                 'RepresentativeName2'           => $form['representative_last_name'] . " " . $details_decoded['representative_first_name'],
                 'Email2'                        => $form['email'] ?? null,
+                'ChannelTypeId'                 => 1,
+                'TypeOfFeedback'                => 1, 
+                'TicketDescription'             => 1,
+                'TransactionType1Id'            => 1,               
+                'TransactionType2Id'            => 1,     
+                'TransactionType3Id'            => null
             ];
+
+            $multipart = Http::asMultipart();
+
+            // Send as multipart form-data to the external API
+            $response = $multipart->post(
+                'https://ticket.f-dci.com/DTI_API/api/Incident/create',$payload
+            );
+
+            if ($response->failed()) {
+                return response()->json([
+                    'message' => 'External API error.',
+                    'error'   => $response->json() ?? $response->body(),
+                ], $response->status());
+            }
+
+
+            return response()->json([
+                'message' => 'Log recorded',
+            ], 201);
             
         }
-        $multipart = Http::asMultipart();
 
-        // Send as multipart form-data to the external API
-        $response = $multipart->post(
-            'https://ticket.f-dci.com/DTI_API/api/Incident/create'
-        );
+    }
 
-        if ($response->failed()) {
+
+    public function apiTest(){
+        dd('hello');
+            $payload = [
+                'CustomerId'                    => "00000001",    
+                'BusinessName2'                 => 1,
+                'RepresentativeName2'           => 1,
+                'Email2'                        => "1@gmai.com",
+                'ChannelTypeId'                 => null,
+                'TypeOfFeedback'                => null, 
+                'TicketDescription'             => null,
+                'TransactionType1Id'            => null,               
+                'TransactionType2Id'            => null,     
+                'TransactionType3Id'            => null
+            ];
+
+            
+
+            $multipart = Http::asMultipart();
+
+            // Send as multipart form-data to the external API
+            $response = $multipart->post(
+                'https://ticket.f-dci.com/DTI_API/api/Incident/create',$payload
+            );
+
+            if ($response->failed()) {
+                return response()->json([
+                    'message' => 'External API error.',
+                    'error'   => $response->json() ?? $response->body(),
+                ], $response->status());
+            }
+
+
             return response()->json([
-                'message' => 'External API error.',
-                'error'   => $response->json() ?? $response->body(),
-            ], $response->status());
-        }
-
-
-        return response()->json([
-            'message' => 'Log recorded',
-        ], 201);
-
+                'message' => 'Log recorded',
+            ], 201);
     }
 
 
