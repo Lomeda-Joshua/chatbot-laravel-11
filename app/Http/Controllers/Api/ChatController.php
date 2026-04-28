@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 
 
+
 class ChatController extends Controller
 {
     /* 
@@ -217,24 +218,21 @@ class ChatController extends Controller
     * Saving of chatbot log
     *
     */ 
-    public function saveLog(Request $request){     
-        $group_id   = $request->group_id;
-        $user_id    = $request->user_id;
-        $details    = $request->details;
-        $is_ticket  = $request->is_ticket;
+    public function saveLog(Request $request){  
+            $group_id   = $request->group_id;
+            $user_id    = $request->user_id;
+            $details    = $request->details;
+       
+            // Log creation
+            ChatBotLog::create([
+                'group_id'      => $group_id,
+                'user_id'       => $user_id,
+                'details'       => $details,
+                'created_by'    => Auth::id(),
+                'is_active'     => 1
+            ]);
         
-        // Log creation
-        ChatBotLog::create([
-            'group_id'      => $group_id,
-            'user_id'       => $user_id,
-            'details'       => $details,
-            'created_by'    => Auth::id(),
-            'is_active'     => 1
-        ]);
-        
-
-        if($is_ticket == 1){
-            $details_decoded = json_decode($request->details, true);
+            $details_decoded = json_decode($details, true);
 
             // Guard against invalid JSON
             if (json_last_error() !== JSON_ERROR_NONE) {
@@ -250,18 +248,26 @@ class ChatController extends Controller
             // Build a flat key => value map using the `name` property
             $form = collect($fields)->keyBy('name')->map(fn($field) => $field['value']);
 
+
             $payload = [
-                'CustomerId'                    => $user_id ?? null,     
-                'BusinessName2'                 => $form['business_name'] ?? null,
-                'RepresentativeName2'           => $form['representative_last_name'] . " " . $details_decoded['representative_first_name'],
-                'Email2'                        => $form['email'] ?? null,
-                'ChannelTypeId'                 => 1,
-                'TypeOfFeedback'                => 1, 
-                'TicketDescription'             => 1,
-                'TransactionType1Id'            => 1,               
-                'TransactionType2Id'            => 1,     
-                'TransactionType3Id'            => 1
-            ];
+                    'CustomerId'          => $user_id,
+                    'BusinessName2'       => $form['Business Name'] ?? null,
+                    'RepresentativeName2' => trim(
+                                                ($form['Representative Last Name'] ?? '') . ' ' .
+                                                ($form['Representative First Name'] ?? '') . ' ' .
+                                                ($form['Representative M.I'] ?? '')
+                                            ),
+                    'Email2'              => $form['Business email'] ?? null,
+                    'MobileNumber2'       => $form['Business Contact No'] ?? null,
+                    'BusinessUrl2'        => $form['Website'] ?? null,
+                    'CurrentAddress2'     => $form['Complete Address'] ?? null,
+                    'ChannelTypeId'       => 1,
+                    'TypeOfFeedback'      => 1,
+                    'TicketDescription'   => $form['Complete Address'] ?? null, // replace with correct field
+                    'TransactionType1Id'  => 1,
+                    'TransactionType2Id'  => 1,
+                    'TransactionType3Id'  => 1,
+                ];
 
             $multipart = Http::asMultipart();
 
@@ -270,6 +276,7 @@ class ChatController extends Controller
                 'https://ticket.f-dci.com/DTI_API/api/Incident/create',$payload
             );
 
+            
             if ($response->failed()) {
                 return response()->json([
                     'message' => 'External API error.',
@@ -282,7 +289,6 @@ class ChatController extends Controller
                 'message' => 'Log recorded',
             ], 201);
             
-        }
 
     }
 
