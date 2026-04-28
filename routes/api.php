@@ -20,7 +20,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [SsoController::class, 'logout']);
     Route::post('/logout-all', [SsoController::class, 'logoutAll']);
 
- 
+
+
+});
+
     // ===== Chat Routes =====
     Route::prefix('chat')->group(function () {
         // Get step endpotin
@@ -39,11 +42,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::post('/api-test',   [ChatController::class, 'saveLog']);
     });
-
-
-
-});
-
 
 
 
