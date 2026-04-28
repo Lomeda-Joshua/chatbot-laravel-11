@@ -220,9 +220,10 @@ class ChatController extends Controller
     */ 
     public function saveLog(Request $request){  
             $group_id   = $request->group_id;
-            $user_id    = $request->user_id;
+            $user_id    = Auth::id();
             $details    = $request->details;
        
+            dd($user_id);
             // Log creation
             ChatBotLog::create([
                 'group_id'      => $group_id,
@@ -276,7 +277,7 @@ class ChatController extends Controller
                 'https://ticket.f-dci.com/DTI_API/api/Incident/create',$payload
             );
 
-            
+
             if ($response->failed()) {
                 return response()->json([
                     'message' => 'External API error.',
