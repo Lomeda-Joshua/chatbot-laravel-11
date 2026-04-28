@@ -260,7 +260,7 @@ class ChatController extends Controller
                 'TicketDescription'             => 1,
                 'TransactionType1Id'            => 1,               
                 'TransactionType2Id'            => 1,     
-                'TransactionType3Id'            => null
+                'TransactionType3Id'            => 1
             ];
 
             $multipart = Http::asMultipart();
