@@ -21,6 +21,8 @@ return [
 
     'allowed_origins' => [
         'http://127.0.0.1:8000', 
+        'http://127.0.0.1:8001',
+        'http://localhost:8006',
         'http://localhost:8006', 
         'https://api-chatbot.f-dci.com', 
         'https://web-chatbot.f-dci.com', 

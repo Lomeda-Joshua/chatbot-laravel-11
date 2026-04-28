@@ -13,14 +13,14 @@ Route::prefix('sso')->group(function () {
     Route::post('/force-logout', [SsoController::class, 'forceLogout']);
 });
 
+
+
 // ===== Protected API Routes =====
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [SsoController::class, 'user']);
     Route::post('/sso/generate-token', [SsoController::class, 'generateSsoToken']);
     Route::post('/logout', [SsoController::class, 'logout']);
     Route::post('/logout-all', [SsoController::class, 'logoutAll']);
-
-
 
 });
 
@@ -40,7 +40,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/barangays', [ ChatController::class, 'getBarangays'] );
         Route::get('/search-barangays', [ ChatController::class, 'searchBrgy'] );
 
-        Route::post('/api-test',   [ChatController::class, 'saveLog']);
+        Route::post('/api-test', [ChatController::class, 'saveLog'])->middleware('auth:sanctum');
+        Route::post('/save-logs', [ChatController::class, 'saveLog'])->middleware('auth:sanctum');
     });
 
 
