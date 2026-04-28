@@ -19,19 +19,29 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/sso/generate-token', [SsoController::class, 'generateSsoToken']);
     Route::post('/logout', [SsoController::class, 'logout']);
     Route::post('/logout-all', [SsoController::class, 'logoutAll']);
-});
 
-// ===== Chat Routes =====
-Route::prefix('chat')->group(function () {
-    Route::get('/get-step',     [ChatController::class, 'data']);
-    Route::post('/get-step',    [ChatController::class, 'nextStep']);
-    Route::post('/save-logs',   [ChatController::class, 'saveLog']);
+ 
+    // ===== Chat Routes =====
+    Route::prefix('chat')->group(function () {
+        // Get step endpotin
+        Route::get('/get-step',     [ChatController::class, 'data']);
+        Route::post('/get-step',    [ChatController::class, 'nextStep']);
 
-    Route::get('/regions', [ ChatController::class, 'getRegion'] );
-    Route::get('/provinces', [ ChatController::class, 'getProvinces'] );
-    Route::get('/municipalities', [ ChatController::class, 'getMunicipalities'] );
-    Route::get('/barangays', [ ChatController::class, 'getBarangays'] );
-    Route::get('/search-barangays', [ ChatController::class, 'searchBrgy'] );
+        // Save logs enpodoint logging of history
+        Route::post('/save-logs',   [ChatController::class, 'saveLog']);
+
+        // Location and address endpoints
+        Route::get('/regions', [ ChatController::class, 'getRegion'] );
+        Route::get('/provinces', [ ChatController::class, 'getProvinces'] );
+        Route::get('/municipalities', [ ChatController::class, 'getMunicipalities'] );
+        Route::get('/barangays', [ ChatController::class, 'getBarangays'] );
+        Route::get('/search-barangays', [ ChatController::class, 'searchBrgy'] );
+
+        Route::post('/api-test',   [ChatController::class, 'saveLog']);
+    });
+
+
+
 });
 
 
