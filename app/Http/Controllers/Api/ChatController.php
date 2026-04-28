@@ -223,7 +223,7 @@ class ChatController extends Controller
             $user_id    = Auth::id();
             $details    = $request->details;
        
-            dd($user_id);
+            
             // Log creation
             ChatBotLog::create([
                 'group_id'      => $group_id,
