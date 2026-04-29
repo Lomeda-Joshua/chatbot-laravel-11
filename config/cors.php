@@ -26,7 +26,9 @@ return [
         'http://localhost:8006', 
         'https://api-chatbot.f-dci.com', 
         'https://web-chatbot.f-dci.com', 
-        'https://odrs.f-dci.com'],
+	'https://odrs.f-dci.com',
+	'https://one.f-dci.com'
+    ],
 
     'allowed_origins_patterns' => [],
 

@@ -41,7 +41,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/search-barangays', [ ChatController::class, 'searchBrgy'] );
 
         Route::post('/api-test', [ChatController::class, 'saveLog'])->middleware('auth:sanctum');
-        Route::post('/save-logs', [ChatController::class, 'saveLog'])->middleware('auth:sanctum');
+        Route::post('/save-logs', [ChatController::class, 'saveLog']);
     });
 
 
