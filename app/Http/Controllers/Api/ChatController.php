@@ -274,7 +274,7 @@ class ChatController extends Controller
         'CurrentAddress2'     => $form['Complete Address'] ?? null,
         'ChannelTypeId'       => 1,
         'TypeOfFeedback'      => 1,
-        'TicketDescription'   => $form['Complete Address'] ?? null,
+        'TicketDescription'   => 'To follow',
         'TransactionType1Id'  => 1,
         'TransactionType2Id'  => 1,
         'TransactionType3Id'  => 1,
