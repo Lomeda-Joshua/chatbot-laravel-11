@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\SsoController;
+use App\Http\Controllers\ApiKeyController;
 
 // ===== Public SSO Routes (No auth required) =====
 Route::prefix('sso')->group(function () {
@@ -22,12 +23,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [SsoController::class, 'logout']);
     Route::post('/logout-all', [SsoController::class, 'logoutAll']);
 
+    
 });
+
+    Route::post('/admin/apikey/generate', [ApiKeyController::class, 'generate']);
+
 
     // ===== Chat Routes =====
     Route::prefix('chat')->group(function () {
         // Get step endpotin
-        Route::get('/get-step',     [ChatController::class, 'data']);
+        Route::get('/get-step',     [ChatController::class, 'data'])->middleware('api.key');
         Route::post('/get-step',    [ChatController::class, 'nextStep']);
 
         // Save logs enpodoint logging of history

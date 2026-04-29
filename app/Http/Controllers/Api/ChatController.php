@@ -220,11 +220,11 @@ class ChatController extends Controller
      */
    public function saveLog(Request $request)
 {
-    $request->validate([
-        'group_id' => ['required', 'integer'],
-        'user_id'  => ['nullable'],
-        'details'  => ['required'],
-    ]);
+    // $request->validate([
+    //     'group_id' => ['required', 'integer'],
+    //     'user_id'  => ['nullable'],
+    //     'details'  => ['required'],
+    // ]);
 
     $group_id = $request->group_id;
     $user_id  = $request->user_id ?? Auth::id();
@@ -261,17 +261,29 @@ class ChatController extends Controller
 
     // Build payload
     $payload = [
-        'CustomerId'          => $user_id,
+        'CustomerId'          => "00000017",
         'BusinessName2'       => $form['Business Name'] ?? null,
         'RepresentativeName2'=> trim(
             ($form['Representative Last Name'] ?? '') . ' ' .
             ($form['Representative First Name'] ?? '') . ' ' .
             ($form['Representative M.I'] ?? '')
         ),
-        'Email2'              => $form['Business email'] ?? null,
-        'MobileNumber2'       => $form['Business Contact No'] ?? null,
-        'BusinessUrl2'        => $form['Website'] ?? null,
-        'CurrentAddress2'     => $form['Complete Address'] ?? null,
+        // 'Email2'              => $form['Business email'] ?? null,
+        // 'MobileNumber2'       => $form['Business Contact No'] ?? null,
+        // 'BusinessUrl2'        => $form['Website'] ?? null,
+        // 'CurrentAddress2'     => $form['Complete Address'] ?? null,
+        // 'ChannelTypeId'       => 1,
+        // 'TypeOfFeedback'      => 1,
+        // 'TicketDescription'   => 'To follow',
+        // 'TransactionType1Id'  => 1,
+        // 'TransactionType2Id'  => 1,
+        // 'TransactionType3Id'  => 1,
+
+
+        'Email2'              => "sjoahu@gmail.com_create_guid",
+        'MobileNumber2'       => "094565465464",
+        'BusinessUrl2'        => "asdasd@gmail.com",
+        'CurrentAddress2'     => "eafa stretett",
         'ChannelTypeId'       => 1,
         'TypeOfFeedback'      => 1,
         'TicketDescription'   => 'To follow',
@@ -279,6 +291,8 @@ class ChatController extends Controller
         'TransactionType2Id'  => 1,
         'TransactionType3Id'  => 1,
     ];
+
+    
 
     // Send to external API
     $response = Http::asMultipart()->post(

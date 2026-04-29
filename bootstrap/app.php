@@ -12,6 +12,8 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
+use App\Http\Middleware\validateApiKey;
+
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
@@ -52,6 +54,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Aliases
         $middleware->alias([
             'verified' => EnsureEmailIsVerified::class,
+            'api.key' => validateApiKey::class
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
