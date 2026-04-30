@@ -221,97 +221,98 @@ class ChatController extends Controller
     public function saveLog(Request $request)
     {
 
-    // $request->val+idate([
-    //     'group_id' => ['required', 'integer'],
-    //     'user_id'  => ['nullable'],
-    //     'details'  => ['required'],
-    // ]);
+            dd();
+            // $request->val+idate([
+            //     'group_id' => ['required', 'integer'],
+            //     'user_id'  => ['nullable'],
+            //     'details'  => ['required'],
+            // ]);
 
-    $group_id = 1;
-    $api_key  = $request->api_key;
-    
-    $details  = $request->input('details');
+            $group_id = 1;
+            $api_key  = $request->api_key;
+            
+            $details  = $request->input('details');
 
-    // Ensure details is always an array
-    $details_decoded = is_array($details)
-        ? $details
-        : json_decode($details, true);
+            // Ensure details is always an array
+            $details_decoded = is_array($details)
+                ? $details
+                : json_decode($details, true);
 
-    if (is_string($details) && json_last_error() !== JSON_ERROR_NONE) {
-        return response()->json([
-            'message' => 'Invalid JSON in details field.',
-            'error'   => json_last_error_msg(),
-        ], 422);
-    }
+            if (is_string($details) && json_last_error() !== JSON_ERROR_NONE) {
+                return response()->json([
+                    'message' => 'Invalid JSON in details field.',
+                    'error'   => json_last_error_msg(),
+                ], 422);
+            }
 
-    // Save log
-    ChatBotLog::create([
-        'group_id'   => $group_id,
-        'user_id'    => 1,
-        'details'    => is_array($details) ? json_encode($details) : $details,
-        'created_by' => Auth::id(),
-        'is_active'  => 1,
-    ]);
+            // Save log
+            ChatBotLog::create([
+                'group_id'   => $group_id,
+                'user_id'    => 1,
+                'details'    => is_array($details) ? json_encode($details) : $details,
+                'created_by' => Auth::id(),
+                'is_active'  => 1,
+            ]);
 
-    // Extract form fields safely
-    $fields = $details_decoded['actions'][0]['form']['fields'] ?? [];
+            // Extract form fields safely
+            $fields = $details_decoded['actions'][0]['form']['fields'] ?? [];
 
-    $form = collect($fields)
-        ->filter(fn($field) => isset($field['name']))
-        ->keyBy('name')
-        ->map(fn($field) => $field['value'] ?? null);
+            $form = collect($fields)
+                ->filter(fn($field) => isset($field['name']))
+                ->keyBy('name')
+                ->map(fn($field) => $field['value'] ?? null);
 
-    // Build payload
-    $payload = [
-        'CustomerId'            => "00000001",
-        'BusinessName2'         => $form['Business Name'] ?? null,
-        'RepresentativeName2'   => trim(
-            ($form['Representative Last Name'] ?? '') . ' ' .
-            ($form['Representative First Name'] ?? '') . ' ' .
-            ($form['Representative M.I'] ?? '')
-        ),
-        // 'Email2'              => $form['Business email'] ?? null,
-        // 'MobileNumber2'       => $form['Business Contact No'] ?? null,
-        // 'BusinessUrl2'        => $form['Website'] ?? null,
-        // 'CurrentAddress2'     => $form['Complete Address'] ?? null,
-        // 'ChannelTypeId'       => 1,
-        // 'TypeOfFeedback'      => 1,
-        // 'TicketDescription'   => 'To follow',
-        // 'TransactionType1Id'  => 1,
-        // 'TransactionType2Id'  => 1,
-        // 'TransactionType3Id'  => 1,
+            // Build payload
+            $payload = [
+                'CustomerId'            => "00000001",
+                'BusinessName2'         => $form['Business Name'] ?? null,
+                'RepresentativeName2'   => trim(
+                    ($form['Representative Last Name'] ?? '') . ' ' .
+                    ($form['Representative First Name'] ?? '') . ' ' .
+                    ($form['Representative M.I'] ?? '')
+                ),
+                // 'Email2'              => $form['Business email'] ?? null,
+                // 'MobileNumber2'       => $form['Business Contact No'] ?? null,
+                // 'BusinessUrl2'        => $form['Website'] ?? null,
+                // 'CurrentAddress2'     => $form['Complete Address'] ?? null,
+                // 'ChannelTypeId'       => 1,
+                // 'TypeOfFeedback'      => 1,
+                // 'TicketDescription'   => 'To follow',
+                // 'TransactionType1Id'  => 1,
+                // 'TransactionType2Id'  => 1,
+                // 'TransactionType3Id'  => 1,
 
 
-        'Email2'              => "sjoahu@gmail.com_create_guid",
-        'MobileNumber2'       => "094565465464",
-        'BusinessUrl2'        => "asdasd@gmail.com",
-        'CurrentAddress2'     => "eafa stretett",
-        'ChannelTypeId'       => "0000001",
-        'TypeOfFeedback'      => 1,
-        'TicketDescription'   => 'To follow',
-        'TransactionType1Id'  => 1,
-        'TransactionType2Id'  => 1,
-        'TransactionType3Id'  => 1,
-    ];
+                'Email2'              => "sjoahu@gmail.com_create_guid",
+                'MobileNumber2'       => "094565465464",
+                'BusinessUrl2'        => "asdasd@gmail.com",
+                'CurrentAddress2'     => "eafa stretett",
+                'ChannelTypeId'       => "0000001",
+                'TypeOfFeedback'      => 1,
+                'TicketDescription'   => 'To follow',
+                'TransactionType1Id'  => 1,
+                'TransactionType2Id'  => 1,
+                'TransactionType3Id'  => 1,
+            ];
 
-    
+            
 
-    // Send to external API
-    $response = Http::asMultipart()->post(
-        'https://ticket.f-dci.com/DTI_API/api/Incident/create',
-        $payload
-    );
+            // Send to external API
+            $response = Http::asMultipart()->post(
+                'https://ticket.f-dci.com/DTI_API/api/Incident/create',
+                $payload
+            );
 
-    if ($response->failed()) {
-        return response()->json([
-            'message' => 'External API error.',
-            'error'   => $response->json() ?? $response->body(),
-        ], $response->status());
-    }
+            if ($response->failed()) {
+                return response()->json([
+                    'message' => 'External API error.',
+                    'error'   => $response->json() ?? $response->body(),
+                ], $response->status());
+            }
 
-    return response()->json([
-        'message' => 'Log recorded',
-    ], 201);
+            return response()->json([
+                'message' => 'Log recorded',
+            ], 201);
     
    }
    /* 

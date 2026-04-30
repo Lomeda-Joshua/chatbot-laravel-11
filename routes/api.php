@@ -24,17 +24,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout-all', [SsoController::class, 'logoutAll']);
 });
 
-    Route::post('/admin/apikey/generate', [ApiKeyController::class, 'generate']);
+ Route::post('/admin/apikey/generate', [ApiKeyController::class, 'generate']);
 
-
-    // ===== Chat Routes =====
+ // ===== Chat Routes =====
     Route::prefix('chat')->group(function () {
         // Get step endpotin
         Route::get('/get-step',     [ChatController::class, 'data']);
         Route::post('/get-step',    [ChatController::class, 'nextStep']);
 
         // Save logs enpodoint logging of history
-        Route::post('/save-logs',   [ChatController::class, 'saveLog']);
+        Route::middleware(['web','auth'])->post('/save-logs',   [ChatController::class, 'saveLog']);
 
         // Location and address endpoints
         Route::get('/regions', [ ChatController::class, 'getRegion'] );
@@ -45,6 +44,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::post('/api-test', [ChatController::class, 'saveLog'])->middleware('auth:sanctum');
     });
+
+   
 
 
 
