@@ -286,7 +286,7 @@ class ChatController extends Controller
         'MobileNumber2'       => "094565465464",
         'BusinessUrl2'        => "asdasd@gmail.com",
         'CurrentAddress2'     => "eafa stretett",
-        'ChannelTypeId'       => 1,
+        'ChannelTypeId'       => "0000001",
         'TypeOfFeedback'      => 1,
         'TicketDescription'   => 'To follow',
         'TransactionType1Id'  => 1,
