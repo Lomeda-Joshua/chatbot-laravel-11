@@ -9,6 +9,7 @@ class ApiKey extends Model
     protected $fillable = [
         'name',
         'key',
+        'pass_key',
         'is_active'
     ];
 }

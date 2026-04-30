@@ -29,19 +29,20 @@ class GenerateApiKey extends Command
     public function handle()
     {
         $key = Str::random(64); 
+        $passkey = Str::random(64);
 
         $apiKey = ApiKey::create([
             'name'      => $this->argument('name'),
             'key'       => hash('sha256', $key),  // ← hash before storing
+            'pass_key'  => hash('sha256', $passkey),
             'is_active' => true,
         ]);
 
         // show the PLAIN key once — never stored in DB
-        $this->info('API Key Generated Successfully!');
+        $this->info('API Key and pass key Generated Successfully!');
         $this->info('Name : ' . $apiKey->name);
-        $this->info('Key  : ' . $key);          // ← copy this to your React .env
+        $this->info('API key  : ' . $key);          // ← copy this to your React .env
+        $this->info('Pass key  : ' . $passkey);          // ← copy this to your React .env
         $this->warn('Copy this key now — it will never be shown again!');
-
-        
     }
 }

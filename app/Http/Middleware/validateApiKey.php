@@ -16,10 +16,12 @@ class validateApiKey
      */
     public function handle(Request $request, Closure $next): Response
     {
+        dd('hello');
         $plainKey = $request->header('X-API-KEY');
-
-        if (!$plainKey) {
-            return response()->json(['error' => 'API key missing'], 401);
+        $api_application_key = config('services.odrs_api_application_key.key');
+        
+        if (!$plainKey || $plainKey !== $api_application_key) {
+            return response()->json(['message' => 'Unauthorized'], 402);
         }
 
         // hash the incoming key then compare

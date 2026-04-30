@@ -12,11 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('api_keys', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');           // e.g. "React Frontend"
-            $table->string('key')->unique();  // the actual api key
-            $table->boolean('is_active')->default(true);
-            $table->timestamps();
+            // Adding a nullable string column after an existing column
+            $table->string('pass_key');
         });
     }
 
@@ -26,7 +23,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('api_keys', function (Blueprint $table) {
-            Schema::dropColumnIfExists('api_keys');
+            // Correct method name: dropColumnIfExists
+            $table->dropColumn('pass_key');
         });
     }
 };

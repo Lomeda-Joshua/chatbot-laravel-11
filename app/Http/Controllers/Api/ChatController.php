@@ -218,16 +218,18 @@ class ChatController extends Controller
     * Saving of chatbot log
     *
      */
-   public function saveLog(Request $request)
-{
-    // $request->validate([
+    public function saveLog(Request $request)
+    {
+
+    // $request->val+idate([
     //     'group_id' => ['required', 'integer'],
     //     'user_id'  => ['nullable'],
     //     'details'  => ['required'],
     // ]);
 
-    $group_id = $request->group_id;
-    $user_id  = $request->user_id ?? Auth::id();
+    $group_id = 1;
+    $api_key  = $request->api_key;
+    
     $details  = $request->input('details');
 
     // Ensure details is always an array
@@ -245,7 +247,7 @@ class ChatController extends Controller
     // Save log
     ChatBotLog::create([
         'group_id'   => $group_id,
-        'user_id'    => $user_id,
+        'user_id'    => 1,
         'details'    => is_array($details) ? json_encode($details) : $details,
         'created_by' => Auth::id(),
         'is_active'  => 1,
@@ -261,9 +263,9 @@ class ChatController extends Controller
 
     // Build payload
     $payload = [
-        'CustomerId'          => "00000017",
-        'BusinessName2'       => $form['Business Name'] ?? null,
-        'RepresentativeName2'=> trim(
+        'CustomerId'            => "00000001",
+        'BusinessName2'         => $form['Business Name'] ?? null,
+        'RepresentativeName2'   => trim(
             ($form['Representative Last Name'] ?? '') . ' ' .
             ($form['Representative First Name'] ?? '') . ' ' .
             ($form['Representative M.I'] ?? '')
@@ -310,6 +312,7 @@ class ChatController extends Controller
     return response()->json([
         'message' => 'Log recorded',
     ], 201);
+    
    }
    /* 
     public function saveLog(Request $request){  
