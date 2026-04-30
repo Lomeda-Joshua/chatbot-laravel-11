@@ -213,23 +213,22 @@ class ChatController extends Controller
     }
 
 
-    /*
-    *
-    * Saving of chatbot log
-    *
-     */
-    public function saveLog(Request $request)
-    {
 
-    // $request->val+idate([
-    //     'group_id' => ['required', 'integer'],
-    //     'user_id'  => ['nullable'],
-    //     'details'  => ['required'],
-    // ]);
 
-    $group_id = 1;
-    $api_key  = $request->api_key;
-    
+
+
+
+
+public function saveLog(Request $request)
+{
+    $request->validate([
+        'group_id' => ['required', 'integer'],
+        'user_id'  => ['nullable'],
+        'details'  => ['required'],
+    ]);
+
+    $group_id = $request->group_id;
+    $user_id  = $request->user_id ?? null;
     $details  = $request->input('details');
 
     // Ensure details is always an array
@@ -247,7 +246,7 @@ class ChatController extends Controller
     // Save log
     ChatBotLog::create([
         'group_id'   => $group_id,
-        'user_id'    => 1,
+        'user_id'    => $user_id,
         'details'    => is_array($details) ? json_encode($details) : $details,
         'created_by' => Auth::id(),
         'is_active'  => 1,
@@ -263,38 +262,24 @@ class ChatController extends Controller
 
     // Build payload
     $payload = [
-        'CustomerId'            => "00000001",
-        'BusinessName2'         => $form['Business Name'] ?? null,
-        'RepresentativeName2'   => trim(
+        'CustomerId'          => $user_id,
+        'BusinessName2'       => $form['Business Name'] ?? null,
+        'RepresentativeName2'=> trim(
             ($form['Representative Last Name'] ?? '') . ' ' .
             ($form['Representative First Name'] ?? '') . ' ' .
             ($form['Representative M.I'] ?? '')
         ),
-        // 'Email2'              => $form['Business email'] ?? null,
-        // 'MobileNumber2'       => $form['Business Contact No'] ?? null,
-        // 'BusinessUrl2'        => $form['Website'] ?? null,
-        // 'CurrentAddress2'     => $form['Complete Address'] ?? null,
-        // 'ChannelTypeId'       => 1,
-        // 'TypeOfFeedback'      => 1,
-        // 'TicketDescription'   => 'To follow',
-        // 'TransactionType1Id'  => 1,
-        // 'TransactionType2Id'  => 1,
-        // 'TransactionType3Id'  => 1,
-
-
-        'Email2'              => "sjoahu@gmail.com_create_guid",
-        'MobileNumber2'       => "094565465464",
-        'BusinessUrl2'        => "asdasd@gmail.com",
-        'CurrentAddress2'     => "eafa stretett",
-        'ChannelTypeId'       => "0000001",
+        'Email2'              => $form['Business email'] ?? null,
+        'MobileNumber2'       => $form['Business Contact No'] ?? null,
+        'BusinessUrl2'        => $form['Website'] ?? null,
+        'CurrentAddress2'     => $form['Complete Address'] ?? null,
+        'ChannelTypeId'       => 1,
         'TypeOfFeedback'      => 1,
-        'TicketDescription'   => 'To follow',
+        'TicketDescription'   => $form['Complete Address'] ?? null,
         'TransactionType1Id'  => 1,
         'TransactionType2Id'  => 1,
         'TransactionType3Id'  => 1,
     ];
-
-    
 
     // Send to external API
     $response = Http::asMultipart()->post(
@@ -312,8 +297,120 @@ class ChatController extends Controller
     return response()->json([
         'message' => 'Log recorded',
     ], 201);
-    
    }
+
+
+
+
+
+
+
+
+
+
+
+
+    /*
+    *
+    * Saving of chatbot log
+    *
+     */
+//     public function saveLog(Request $request)
+//     {
+
+//     $request->validate([
+//         'group_id' => ['required', 'integer'],
+//         'user_id'  => ['nullable'],
+//         'details'  => ['required'],
+//     ]);
+
+//     $group_id = 1;
+//     $api_key  = $request->api_key;
+    
+//     $details  = $request->input('details');
+
+//     // Ensure details is always an array
+//     $details_decoded = is_array($details)
+//         ? $details
+//         : json_decode($details, true);
+
+//     if (is_string($details) && json_last_error() !== JSON_ERROR_NONE) {
+//         return response()->json([
+//             'message' => 'Invalid JSON in details field.',
+//             'error'   => json_last_error_msg(),
+//         ], 422);
+//     }
+
+//     // Save log
+//     ChatBotLog::create([
+//         'group_id'   => $group_id,
+//         'user_id'    => Auth::id(),
+//         'details'    => is_array($details) ? json_encode($details) : $details,
+//         'created_by' => Auth::id(),
+//         'is_active'  => 1,
+//     ]);
+
+//     // Extract form fields safely
+//     $fields = $details_decoded['actions'][0]['form']['fields'] ?? [];
+
+//     $form = collect($fields)
+//         ->filter(fn($field) => isset($field['name']))
+//         ->keyBy('name')
+//         ->map(fn($field) => $field['value'] ?? null);
+
+//     // Build payload
+//     $payload = [
+//         'CustomerId'            => "00000001",
+//         'BusinessName2'         => $form['Business Name'] ?? null,
+//         'RepresentativeName2'   => trim(
+//             ($form['Representative Last Name'] ?? '') . ' ' .
+//             ($form['Representative First Name'] ?? '') . ' ' .
+//             ($form['Representative M.I'] ?? '')
+//         ),
+//         // 'Email2'              => $form['Business email'] ?? null,
+//         // 'MobileNumber2'       => $form['Business Contact No'] ?? null,
+//         // 'BusinessUrl2'        => $form['Website'] ?? null,
+//         // 'CurrentAddress2'     => $form['Complete Address'] ?? null,
+//         // 'ChannelTypeId'       => 1,
+//         // 'TypeOfFeedback'      => 1,
+//         // 'TicketDescription'   => 'To follow',
+//         // 'TransactionType1Id'  => 1,
+//         // 'TransactionType2Id'  => 1,
+//         // 'TransactionType3Id'  => 1,
+
+
+//         'Email2'              => "sjoahu@gmail.com_create_guid",
+//         'MobileNumber2'       => "094565465464",
+//         'BusinessUrl2'        => "asdasd@gmail.com",
+//         'CurrentAddress2'     => "eafa stretett",
+//         'ChannelTypeId'       => "0000001",
+//         'TypeOfFeedback'      => 1,
+//         'TicketDescription'   => 'To follow',
+//         'TransactionType1Id'  => 1,
+//         'TransactionType2Id'  => 1,
+//         'TransactionType3Id'  => 1,
+//     ];
+
+    
+
+//     // Send to external API
+//     $response = Http::asMultipart()->post(
+//         'https://ticket.f-dci.com/DTI_API/api/Incident/create',
+//         $payload
+//     );
+
+//     if ($response->failed()) {
+//         return response()->json([
+//             'message' => 'External API error.',
+//             'error'   => $response->json() ?? $response->body(),
+//         ], $response->status());
+//     }
+
+//     return response()->json([
+//         'message' => 'Log recorded',
+//     ], 201);
+    
+//    }
    /* 
     public function saveLog(Request $request){  
             $group_id   = $request->group_id;
