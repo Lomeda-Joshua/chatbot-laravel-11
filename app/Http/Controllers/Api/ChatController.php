@@ -525,7 +525,7 @@ public function saveLog(Request $request)
 
 
 
-
+    /*
     *
     * Select input of location API endpoint requests
     *
