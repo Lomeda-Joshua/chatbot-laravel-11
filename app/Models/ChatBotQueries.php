@@ -25,6 +25,6 @@ class ChatBotQueries extends Model
         'is_ticket'
     ];
 
-    protected $table = 'chatbot_queries';
+    protected $table = 'chatbot_queries_2';
 
 }

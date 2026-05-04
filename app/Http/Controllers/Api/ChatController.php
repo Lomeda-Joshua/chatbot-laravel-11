@@ -213,12 +213,6 @@ class ChatController extends Controller
     }
 
 
-
-
-
-
-
-
 public function saveLog(Request $request)
 {
     $request->validate([
