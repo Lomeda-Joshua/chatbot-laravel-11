@@ -24,10 +24,12 @@ return [
         'http://127.0.0.1:8001',
         'http://localhost:8006',
         'http://localhost:8006', 
+        'http://localhost:5174', 
+        'http://127.0.0.1:5174',
         'https://api-chatbot.f-dci.com', 
         'https://web-chatbot.f-dci.com', 
-	'https://odrs.f-dci.com',
-	'https://one.f-dci.com'
+        'https://odrs.f-dci.com',
+        'https://one.f-dci.com'
     ],
 
     'allowed_origins_patterns' => [],

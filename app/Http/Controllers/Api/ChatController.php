@@ -275,7 +275,7 @@ public function saveLog(Request $request)
         'CurrentAddress2'     => $form['Complete Address'] ?? null,
         'ChannelTypeId'       => 1,
         'TypeOfFeedback'      => 1,
-        'TicketDescription'   => $form['Complete Address'] ?? null,
+        'TicketDescription'   => "No description set",
         'TransactionType1Id'  => 1,
         'TransactionType2Id'  => 1,
         'TransactionType3Id'  => 1,
@@ -298,15 +298,6 @@ public function saveLog(Request $request)
         'message' => 'Log recorded',
     ], 201);
    }
-
-
-
-
-
-
-
-
-
 
 
 
@@ -534,7 +525,7 @@ public function saveLog(Request $request)
 
 
 
-    /*
+
     *
     * Select input of location API endpoint requests
     *
