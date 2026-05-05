@@ -213,29 +213,33 @@ class ChatController extends Controller
     }
 
 
-public function saveLog(Request $request)
-{
-    $request->validate([
-        'group_id' => ['required', 'integer'],
-        'user_id'  => ['nullable'],
-        'details'  => ['required'],
-    ]);
+    public function saveLog(Request $request)
+    {
 
-    $group_id = $request->group_id;
-    $user_id  = $request->user_id ?? null;
-    $details  = $request->input('details');
+        $request->validate([
+            'group_id' => ['required', 'integer'],
+            'user_id'  => ['nullable'],
+            'details'  => ['required'],
+        ]);        
+    
+        $group_id = $request->group_id;
+        $user_id  = $request->user_id ?? null;
+        $details  = $request->input('details');
+        $user_email = $request->email;
+        $customer_id = $request->CustomerID;
 
     // Ensure details is always an array
     $details_decoded = is_array($details)
         ? $details
         : json_decode($details, true);
 
-    if (is_string($details) && json_last_error() !== JSON_ERROR_NONE) {
-        return response()->json([
-            'message' => 'Invalid JSON in details field.',
-            'error'   => json_last_error_msg(),
-        ], 422);
-    }
+
+        if (is_string($details) && json_last_error() !== JSON_ERROR_NONE) {
+            return response()->json([
+                'message' => 'Invalid JSON in details field.',
+                'error'   => json_last_error_msg(),
+            ], 422);
+        }
 
     // Save log
     ChatBotLog::create([
@@ -254,26 +258,26 @@ public function saveLog(Request $request)
         ->keyBy('name')
         ->map(fn($field) => $field['value'] ?? null);
 
-    // Build payload
-    $payload = [
-        'CustomerId'          => $user_id,
-        'BusinessName2'       => $form['Business Name'] ?? null,
-        'RepresentativeName2'=> trim(
-            ($form['Representative Last Name'] ?? '') . ' ' .
-            ($form['Representative First Name'] ?? '') . ' ' .
-            ($form['Representative M.I'] ?? '')
-        ),
-        'Email2'              => $form['Business email'] ?? null,
-        'MobileNumber2'       => $form['Business Contact No'] ?? null,
-        'BusinessUrl2'        => $form['Website'] ?? null,
-        'CurrentAddress2'     => $form['Complete Address'] ?? null,
-        'ChannelTypeId'       => 1,
-        'TypeOfFeedback'      => 1,
-        'TicketDescription'   => "No description set",
-        'TransactionType1Id'  => 1,
-        'TransactionType2Id'  => 1,
-        'TransactionType3Id'  => 1,
-    ];
+        // Build payload
+        $payload = [
+            'CustomerId'          => $customer_id,
+            'BusinessName2'       => $form['Business Name'] ?? null,
+            'RepresentativeName2'=> trim(
+                ($form['Representative Last Name'] ?? '') . ' ' .
+                ($form['Representative First Name'] ?? '') . ' ' .
+                ($form['Representative M.I'] ?? '')
+            ),
+            'Email2'              => $user_email ?? null,
+            'MobileNumber2'       => $form['Business Contact No'] ?? null,
+            'BusinessUrl2'        => $form['Website'] ?? null,
+            'CurrentAddress2'     => $form['Complete Address'] ?? null,
+            'ChannelTypeId'       => 1,
+            'TypeOfFeedback'      => 1,
+            'TicketDescription'   => "No description set",
+            'TransactionType1Id'  => 1,
+            'TransactionType2Id'  => 1,
+            'TransactionType3Id'  => 1,
+        ];
 
     // Send to external API
     $response = Http::asMultipart()->post(

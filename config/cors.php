@@ -20,7 +20,9 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
-        'http://127.0.0.1:8000', 
+        'http://localhost:3000', 
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:8000',
         'http://127.0.0.1:8001',
         'http://localhost:8006',
         'http://localhost:8006', 
@@ -29,9 +31,11 @@ return [
         'http://127.0.0.1:5174',
         'http://127.0.0.1:5175',
         'https://api-chatbot.f-dci.com', 
+        'http://api-chatbot.f-dci.com', 
         'https://web-chatbot.f-dci.com', 
         'https://odrs.f-dci.com',
         'https://one.f-dci.com'
+        
     ],
 
     'allowed_origins_patterns' => [],
